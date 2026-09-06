@@ -1,0 +1,38 @@
+.section {
+  padding-block: var(--space-32);
+  border-top: 1px solid var(--border);
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: var(--fs-xl);
+  margin-bottom: var(--space-4);
+}
+
+.subtext {
+  color: var(--muted);
+  max-width: 32ch;
+  margin-bottom: var(--space-8);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: var(--fs-2xl);
+  }
+}
