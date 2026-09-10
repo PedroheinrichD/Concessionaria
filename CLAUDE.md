@@ -195,6 +195,15 @@ Trocar o mock por API/CMS = editar só `lib/vehicles.ts`.
   3. `leads` — tipo (contato/troca/interesse/financiamento), nome, telefone, assunto, mensagem, veiculo_id (opcional), status
   4. `depoimentos` — texto, autor, contexto, publicado, ordem
   5. `configuracoes` — site-wide: nome, slogan, WhatsApp, email, endereço, horários, Google Maps URL
+  - PostgreSQL via Supabase
+- Prisma como ORM
+- Nunca acessar o banco diretamente espalhando queries pelo frontend
+
+- Toda alteração de schema deve ser feita via Prisma migrations
+- Dados de produção nunca devem ser commitados
+- Usar `.env` / `.env.local` para credenciais
+- O banco de desenvolvimento pode usar um projeto Supabase separado do banco de produção
+- O banco de produção será provisionado no ambiente do cliente na entrega
 
 **Status:** TODO - banco não foi criado ainda. Será criado quando o cliente fornecer as credenciais do Supabase.
 
