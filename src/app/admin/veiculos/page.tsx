@@ -17,12 +17,22 @@ export default async function AdminVehiclesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-2xl font-semibold text-fg">Veículos</h1>
-        <p className="mt-1 text-[0.9rem] text-fg-dim">
-          {vehicles.length} no estoque. Colunas com placa/RENAVAM/custo são
-          internas — só aparecem aqui.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-semibold text-fg">
+            Veículos
+          </h1>
+          <p className="mt-1 text-[0.9rem] text-fg-dim">
+            {vehicles.length} no estoque. Placa/RENAVAM/custo são internos — só
+            aparecem aqui.
+          </p>
+        </div>
+        <Link
+          href="/admin/veiculos/novo"
+          className="inline-flex h-10 items-center rounded bg-accent px-4 text-[0.88rem] font-medium text-accent-ink hover:bg-accent-hover"
+        >
+          Novo veículo
+        </Link>
       </div>
 
       <div className="overflow-x-auto rounded border border-border">
@@ -44,7 +54,7 @@ export default async function AdminVehiclesPage() {
               <tr key={v.id} className="text-fg-dim">
                 <td className="p-3">
                   <Link
-                    href={`/estoque/${v.slug}`}
+                    href={`/admin/veiculos/${v.id}`}
                     className="text-fg hover:text-accent"
                   >
                     {v.brand} {v.model}

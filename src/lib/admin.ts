@@ -33,18 +33,29 @@ export async function getLeads(limit = 100) {
   });
 }
 
+const UNHIDE_ADMIN = {
+  licensePlate: false,
+  renavam: false,
+  chassis: false,
+  fipeCode: false,
+  purchaseCost: false,
+  internalNotes: false,
+} as const;
+
 /** Veículos COM os campos administrativos (opt-in explícito sobre o omit global). */
 export async function getVehiclesForAdmin() {
   return prisma.vehicle.findMany({
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
-    omit: {
-      licensePlate: false,
-      renavam: false,
-      chassis: false,
-      fipeCode: false,
-      purchaseCost: false,
-      internalNotes: false,
-    },
+    omit: UNHIDE_ADMIN,
     include: { _count: { select: { photos: true } } },
+  });
+}
+
+/** Um veículo (por id do banco) com fotos ordenadas e campos internos. */
+export async function getVehicleForAdmin(id: string) {
+  return prisma.vehicle.findUnique({
+    where: { id },
+    omit: UNHIDE_ADMIN,
+    include: { photos: { orderBy: { position: "asc" } } },
   });
 }

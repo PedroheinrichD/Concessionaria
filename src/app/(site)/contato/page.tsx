@@ -10,15 +10,17 @@ import { SplitLines } from "@/components/motion/SplitLines";
 import { Reveal } from "@/components/motion/Reveal";
 import { Placeholder } from "@/components/ui/Placeholder";
 import { ContactForm } from "@/components/contato/ContactForm";
-import { whatsappHref } from "@/components/ui/WhatsappCta";
-import { site } from "@/lib/site";
+import { getSiteConfig, whatsappLink } from "@/lib/site-config";
 
 export const metadata: Metadata = {
   title: "Contato",
-  description: `Fale com a ${site.name}: WhatsApp, endereço, horário de funcionamento e Instagram.`,
+  description:
+    "Fale com a Benevento's Veículos: WhatsApp, endereço, horário de funcionamento e Instagram.",
 };
 
-export default function ContatoPage() {
+export default async function ContatoPage() {
+  const site = await getSiteConfig();
+  const waHref = whatsappLink(site.whatsapp.number, site.whatsapp.defaultMessage);
   return (
     <section className="pt-28 pb-20 md:pt-36 md:pb-28">
       <Container width="wide">
@@ -70,7 +72,7 @@ export default function ContatoPage() {
                   <div className="text-[0.95rem] text-fg-dim">
                     <p className="text-fg">WhatsApp</p>
                     <a
-                      href={whatsappHref()}
+                      href={waHref}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:text-fg"

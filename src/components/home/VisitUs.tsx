@@ -9,9 +9,10 @@ import { Reveal } from "@/components/motion/Reveal";
 import { ButtonLink } from "@/components/ui/Button";
 import { WhatsappCta } from "@/components/ui/WhatsappCta";
 import { Placeholder } from "@/components/ui/Placeholder";
-import { site } from "@/lib/site";
+import { getSiteConfig } from "@/lib/site-config";
 
-export function VisitUs() {
+export async function VisitUs() {
+  const site = await getSiteConfig();
   return (
     <section id="visita" className="scroll-mt-24 py-16 md:py-24">
       <Container width="wide">

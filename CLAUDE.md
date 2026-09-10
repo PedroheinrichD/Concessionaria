@@ -10,9 +10,10 @@ vendidos em 3 anos). Visual cinematográfico escuro, alto contraste, um único
 acento vermelho puxado da fachada da loja. Referência de tom: marca automotiva,
 não marketplace.
 
-Hoje roda 100% com dados mockados e imagens em placeholder. Está estruturado
-para receber backend/CMS depois trocando só `src/lib/vehicles.ts` e o
-componente `Placeholder` por `next/image`.
+Ligado ao PostgreSQL do Supabase via Prisma (estoque, leads, depoimentos,
+config). Painel admin (`/admin`, Supabase Auth) faz o CRUD de veículos e o
+upload das fotos. Fotos de veículo do seed são `picsum` (dev) até o admin subir
+as reais; hero/fachada/mapa ainda usam `Placeholder`.
 
 ## Stack
 
@@ -77,34 +78,40 @@ src/
       estoque/page.tsx           catálogo (EstoqueBrowser), força dynamic
       estoque/[id]/page.tsx      página do veículo por slug + generateMetadata
       sobre/page.tsx  contato/page.tsx
-    admin/              painel (fora do (site), shell próprio)
-      layout.tsx  login/  page.tsx (stats)  leads/  veiculos/
+    admin/              painel (fora do (site), shell próprio, tudo requireUser)
+      layout.tsx  login/  page.tsx (stats)  leads/  config/
+      veiculos/  veiculos/novo/  veiculos/[id]/  (CRUD + fotos)
     actions/
-      leads.ts           "use server" - submitContact/Trade/InterestLead
-      auth.ts            "use server" - signIn / signOut (Supabase Auth)
+      leads.ts     "use server" - submitContact/Trade/InterestLead
+      auth.ts      "use server" - signIn / signOut (Supabase Auth)
+      vehicles.ts  "use server" - saveVehicle, deleteVehicle, upload/move/removePhoto
+      config.ts    "use server" - updateSiteConfig
 
   components/
     motion/    SmoothScroll, Reveal, SplitLines, Parallax, Magnetic
-    layout/    SiteHeader (client), SiteFooter (server)
-    ui/        Container, Button (ButtonLink + Button), WhatsappCta,
-               SectionIntro, Placeholder
+    layout/    SiteHeader (client), SiteFooter (server, async, getSiteConfig)
+    ui/        Container, Button, WhatsappCta, SectionIntro, Placeholder
     home/      Hero, ProofBar, FeaturedVehicles, Services, Financing,
                TradeIn, WhyUs, Testimonials, VisitUs
     vehicle/   VehicleCard, VehicleImage, EstoqueBrowser (client), Gallery (client),
                VehicleInterestForm (client)
     contato/   ContactForm (client)
+    admin/     VehicleForm, PhotoManager, DeleteVehicleButton, SiteConfigForm (client)
 
   types/vehicle.ts     interface Vehicle (+ VehiclePhoto, VehicleStatus)
   lib/
-    site.ts            dados institucionais - TEM PLACEHOLDERS (ver "Banco de dados")
+    site.ts            defaults institucionais (fallback do getSiteConfig)
+    site-config.ts     server-only: getSiteConfig() (tabela configuracoes + fallback)
     db.ts              PrismaClient server-only + adapter pg + omit dos campos admin
     vehicles.ts        server-only, Prisma. get* + toVehicle()
     vehicle-format.ts  puro/isomórfico: formatPrice/Mileage/Year, filterVehicles
+    vehicle-schema.ts  zod + options do form de veículo (isomórfico)
+    config-schema.ts   zod do form de configuração (isomórfico)
     content.ts         server-only: getTestimonials()
     leads.ts           server-only: valida (zod) + grava leads
-    admin.ts           server-only: consultas do painel (leads, veículos c/ campos internos)
+    admin.ts           server-only: consultas do painel (+ getVehicleForAdmin)
     auth.ts            server-only: getCurrentUser / requireUser
-    supabase/          config.ts, server.ts, client.ts (Supabase Auth SSR)
+    supabase/          config, server, client, storage (Auth SSR + upload de fotos)
     useIsomorphicLayoutEffect.ts
 
 prisma/schema.prisma   modelos do banco (ver "Banco de dados")
@@ -203,15 +210,15 @@ intencional, guiando a ordem de leitura.
 
 ## Camada de dados
 
-Toda a UI lê de `src/lib/vehicles.ts`, **nunca** de `data/vehicles.ts` direto.
-Trocar o mock por API/CMS = editar só `lib/vehicles.ts`.
+O site roda ligado ao PostgreSQL do Supabase (ver "Banco de dados"). Toda leitura
+passa por `src/lib/{vehicles,content,site-config,admin}.ts` (server-only) ou pelos
+puros de `src/lib/vehicle-format.ts`. Nada de Prisma nos Client Components.
 
-- Filtro/ordenação do `/estoque` é client-side (`filterVehicles` sobre a lista
-  completa). Como os dados são estáticos e pequenos, tudo bem enviar ao cliente.
-- `/estoque/[id]` é SSG: `generateStaticParams` gera as 14 páginas,
-  `generateMetadata` monta title/description por veículo.
-- Formulários (troca, contato) não têm backend: montam uma mensagem e abrem o
-  `wa.me` com o texto pré-preenchido, depois mostram estado de sucesso.
+- `/estoque` busca a lista no servidor e passa para o `EstoqueBrowser` (client),
+  que filtra/ordena em memória com `filterVehicles`.
+- `/estoque/[id]` resolve o veículo por **slug** (`getVehicleBySlug`, cacheada),
+  `notFound()` → 404. Galeria vem de `veiculo_fotos` ordenada por `position`.
+- Formulários gravam lead real (server action + `zod`) **e** abrem o WhatsApp.
 
 ### Banco de dados
 
@@ -221,13 +228,17 @@ Trocar o mock por API/CMS = editar só `lib/vehicles.ts`.
 **Arquitetura Prisma 7 (mudou):**
 - O schema fica em `prisma/schema.prisma`. O `datasource` só declara `provider`,
   **nunca a URL** (o Prisma 7 proíbe `url` no schema).
-- `prisma.config.ts` (raiz) tem a URL para CLI/migrations, lida de `env("DATABASE_URL")`.
-  Carrega o `.env` com `process.loadEnvFile(".env")` (o Prisma 7 não carrega `.env`
+- `prisma.config.ts` (raiz) usa `DIRECT_URL ?? DATABASE_URL` para CLI/migrations.
+  Carrega o `.env` com `process.loadEnvFile(".env")` (Prisma 7 não carrega `.env`
   sozinho quando existe `prisma.config.ts`).
 - Runtime: `src/lib/db.ts` cria o `PrismaClient` com o adapter `PrismaPg`
-  (`new PrismaPg(process.env.DATABASE_URL)`). Tem `import "server-only"` no topo:
+  (`new PrismaPg(process.env.DATABASE_URL)`). `import "server-only"` no topo:
   o build quebra se for importado de um Client Component. `DATABASE_URL` não tem
-  prefixo `NEXT_PUBLIC_`, então nunca vai para o browser.
+  prefixo `NEXT_PUBLIC_`, nunca vai para o browser.
+- **Conexões (`.env`):** `DATABASE_URL` = pooler **transaction** (`:6543`,
+  `?pgbouncer=true`) para o runtime; `DIRECT_URL` = pooler **session** (`:5432`)
+  para migrations (suporta DDL). O adapter pg não cacheia prepared statements por
+  padrão → compatível com o pgbouncer transaction. Ambos testados.
 - **Campos administrativos de `Vehicle`** (`licensePlate`, `renavam`, `chassis`,
   `fipeCode`, `purchaseCost`, `internalNotes`): `omit` global no `PrismaClient`
   (`VEHICLE_ADMIN_FIELDS` em `src/lib/db.ts`). Toda query os exclui por padrão;
@@ -248,10 +259,17 @@ consome de:
   mapeia a linha do Prisma para o `Vehicle` do front (enum -> rótulo, `id` = slug,
   `photos` de `veiculo_fotos`).
 - `src/lib/content.ts` — `getTestimonials()` (tabela `depoimentos`).
-- `/`, `/estoque`, `/estoque/[id]` são `dynamic = "force-dynamic"` (sempre
-  refletem o banco). `/sobre` e `/contato` continuam estáticas.
-- `VehicleImage` renderiza `veiculo_fotos` via `next/image` (host liberado em
-  `next.config.ts` `images.remotePatterns`); sem foto cai no `Placeholder`.
+- `src/lib/site-config.ts` — `getSiteConfig()` (tabela `configuracoes`, cacheada,
+  **fallback total para `src/lib/site.ts`**). Consome no servidor: `SiteFooter`,
+  `VisitUs`, `/contato`. Editável em `/admin/config`. Header/Hero/CTAs de client
+  ainda leem `site.ts` (copy de marca + número, não sensível) — manter os dois em
+  sincronia até uma migração via context.
+- Tudo dentro de `src/app/(site)/` é `force-dynamic` (o layout força), sempre
+  reflete o banco. `/admin/*` também.
+- `VehicleImage` renderiza `veiculo_fotos` via `next/image` (hosts em
+  `next.config.ts` `images.remotePatterns`: `picsum.photos` para o seed de dev,
+  `*.supabase.co/storage/v1/object/public/**` para as reais); sem foto cai no
+  `Placeholder`.
 
 **Leads:** `src/lib/leads.ts` (`server-only`, valida com `zod`) +
 `src/app/actions/leads.ts` (`"use server"`). `ContactForm`, `TradeIn` e
@@ -260,20 +278,33 @@ consome de:
 pública de `leads`** — só `src/lib/admin.ts`, dentro de `/admin`.
 
 **Auth / admin (Supabase Auth, sem Better Auth, sem auth própria):**
-- `src/lib/supabase/{config,server,client}.ts` — clientes SSR/browser.
-- `src/proxy.ts` (ex-`middleware.ts`; Next 16 renomeou) — protege `/admin/*`
-  (`matcher`), renova a sessão. Sem Supabase configurado, `/admin/*` (menos
-  `/admin/login`) redireciona para o login.
+- `src/lib/supabase/{config,server,client,storage}.ts`. `src/proxy.ts`
+  (ex-`middleware.ts`) protege `/admin/*` (`matcher`) e renova a sessão. Sem
+  Supabase configurado, `/admin/*` (menos `/admin/login`) redireciona ao login.
 - `src/lib/auth.ts` — `getCurrentUser()` (nunca lança), `requireUser()` (redirect).
-- Route group `src/app/(site)/` tem o shell público (SmoothScroll + header +
-  footer); `src/app/admin/` fica fora dele e tem shell próprio. `layout.tsx`
-  raiz virou só `<html><body>`.
-- Páginas: `/admin/login`, `/admin` (stats), `/admin/leads`, `/admin/veiculos`
-  (com os campos internos). CRUD de veículos/fotos fica para a próxima etapa —
-  a infra (`admin.ts`, auth, omit opt-in) já está pronta.
-- `.env`: `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` (a anon
-  key é pública por design). `SUPABASE_SERVICE_ROLE_KEY` é segredo, sem
-  `NEXT_PUBLIC_`, usado só pelo `admin:create`.
+- Route group `src/app/(site)/` = shell público (SmoothScroll + header + footer);
+  `src/app/admin/` fora dele, shell próprio. `layout.tsx` raiz virou só
+  `<html><body>`.
+- **CRUD de veículos** (`src/app/actions/vehicles.ts`, guardado por `requireUser`):
+  `/admin/veiculos` (lista) · `/admin/veiculos/novo` · `/admin/veiculos/[id]`
+  (editar + `PhotoManager` + excluir). `saveVehicle` valida com
+  `src/lib/vehicle-schema.ts`. Excluir veículo apaga também os objetos no Storage.
+- **Fotos = upload do admin.** `src/lib/supabase/storage.ts` (service_role,
+  server-only) sobe para o bucket público `veiculos`, grava url/alt/position em
+  `veiculo_fotos`. `PhotoManager` faz upload múltiplo, reordenar (setas) e
+  remover. Precisa de `SUPABASE_SERVICE_ROLE_KEY` no `.env`; sem ela a tela de
+  edição mostra aviso e some o upload (o resto do CRUD funciona). As fotos
+  `picsum` do seed são descartáveis — o admin substitui.
+- `/admin/config` edita `configuracoes` (`src/app/actions/config.ts` +
+  `src/lib/config-schema.ts`).
+- `.env` (formato novo de API keys do Supabase, `sb_...`):
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` = a **publishable key** (`sb_publishable_...`,
+  browser-safe, substitui a antiga anon). `SUPABASE_SERVICE_ROLE_KEY` = a
+  **secret key** (`sb_secret_...`, substitui service_role) — segredo, sem
+  `NEXT_PUBLIC_`, usada por `admin:create` e pelo upload de fotos.
+- Usuário admin: `beneventos@gmail.com` (criado via `admin:create`). Fluxo
+  verificado ponta a ponta: login → dashboard/CRUD → upload de foto real
+  (PhotoManager → action → bucket `veiculos` → `veiculo_fotos`).
 
 **Tabelas** (nomes em pt-BR via `@@map`; modelos/campos em inglês para casar
 com `src/types/vehicle.ts`):
@@ -285,39 +316,41 @@ com `src/types/vehicle.ts`):
 3. `leads` — `Lead`: kind (CONTATO/TROCA/INTERESSE/FINANCIAMENTO), name, phone,
    subject, message, tradeCar, tradeKm, vehicleId?, status.
 4. `depoimentos` — `Testimonial`: quote, author, context, published, position.
-5. `configuracoes` — `SiteConfig`: linha única (`id = "default"`). Espelha
-   `src/lib/site.ts` (o site ainda lê de `site.ts`; a tabela existe seedada e
-   pronta para migrar quando o cliente enviar os dados reais).
+5. `configuracoes` — `SiteConfig`: linha única (`id = "default"`). Lida por
+   `getSiteConfig()` com fallback para `src/lib/site.ts`; editável em
+   `/admin/config`.
 
 **Status:** migration `prisma/migrations/20260910174458_init` aplicada no
-Supabase (Session pooler, PostgreSQL 17.6). `db:verify`: 5 tabelas + 6 enums +
-2 FKs + 15 índices. Seed: 14 veículos, 89 fotos (picsum, dev), 4 depoimentos,
-1 config. `db:test` / `tsc` / `eslint` / `next build` passam.
+Supabase (PostgreSQL 17.6). `db:verify`: 5 tabelas + 6 enums + 2 FKs + 15
+índices. Seed: 14 veículos, 89 fotos (picsum, dev), 4 depoimentos, 1 config.
+`db:test` / `tsc` / `eslint` / `next build` passam. `npm audit`: 0
+vulnerabilidades (via `overrides` de `mysql2` e `deepmerge-ts` — transitivas do
+Prisma, `mysql2` nem é usada).
 
-Migrations futuras: `prisma migrate dev --name <x>` (Session pooler suporta).
-Para produção/serverless: `DATABASE_URL` no pooler **transaction** (6543,
-`?pgbouncer=true`) + `directUrl` no **session** (5432) no `datasource`.
-As fotos de dev (`picsum.photos`) saem quando o cliente enviar as reais →
-Supabase Storage (host já liberado em `next.config.ts`).
+Migrations futuras: `prisma migrate dev --name <x>` (usa `DIRECT_URL`).
 
-## Pendências / o que precisa dos dados reais do cliente
+## Pendências
 
-Tudo marcado com `// TODO` e concentrado em `src/lib/site.ts`:
-
-1. **Contato**: WhatsApp, endereço, CEP, horário, e-mail, link do Google Maps.
-   Hoje são placeholders (`(00) 00000-0000`, "Av. Exemplo, 1234", etc.).
-2. **Imagens**: todo `Placeholder` (hero, cards, galeria, fachada, mapa) precisa
-   de foto real. Trocar `<Placeholder>` por `<Image>` do `next/image` e, se usar
-   host externo, configurar `images.remotePatterns` no `next.config.ts`.
-   Pontos: foto principal do hero, fotos de cada um dos veículos (galeria),
-   fachada/equipe (`/sobre`), embed do mapa (`VisitUs` e `/contato`).
-3. **Estoque**: 14 veículos mockados. Ligar ao sistema de gestão do cliente.
-4. **Nome/domínio**: `metadataBase` e `sitemap.ts` usam
-   `https://beneventoveiculos.com.br` como placeholder.
+1. **Fotos reais dos veículos**: o admin sobe pelo `PhotoManager`
+   (`/admin/veiculos/[id]`); as `picsum` do seed são só demo, o admin substitui.
+2. **Dados da loja**: `configuracoes` está seedada com os placeholders do
+   `src/lib/site.ts`; o cliente/admin ajusta em `/admin/config`. Header/Hero e
+   CTAs de client ainda leem `site.ts` — sincronizar os dois ou migrar via
+   context depois.
+3. **Hero / fachada / mapa**: ainda usam `Placeholder` (não são fotos de
+   veículo). Trocar por `<Image>` / embed quando o cliente enviar.
+4. **Domínio**: `metadataBase` e `sitemap.ts` usam
+   `https://beneventoveiculos.com.br` fixo.
+5. **RLS do bucket `veiculos`**: leitura pública OK; escrita só via secret key
+   no servidor (não há policy de escrita). Se um dia houver upload client-side,
+   criar policy para `authenticated`.
+6. **CRUD admin — próximos**: edição de `alt` da foto, status de lead
+   (novo→fechado), `generateStaticParams`/ISR se quiser SSG parcial.
 
 ## Regras de manutenção
 
-- Lógica de dados só via `lib/vehicles.ts`.
+- Leitura de dados só pelos helpers `server-only` de `lib/` (nada de Prisma em
+  Client Component). Escrita só por server actions guardadas com `requireUser`.
 - Não criar novo valor de cor, radius ou fonte fora dos tokens de `globals.css`.
 - Novo componente visual: arquivo próprio, nome espelhando o componente. Client
   só quando precisa de interação/motion; o resto é Server Component.

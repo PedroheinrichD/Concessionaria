@@ -5,12 +5,13 @@ import {
   Clock,
   WhatsappLogo,
 } from "@phosphor-icons/react/dist/ssr";
-import { site } from "@/lib/site";
 import { Container } from "@/components/ui/Container";
-import { whatsappHref } from "@/components/ui/WhatsappCta";
+import { getSiteConfig, whatsappLink } from "@/lib/site-config";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const site = await getSiteConfig();
   const year = new Date().getFullYear();
+  const waHref = whatsappLink(site.whatsapp.number, site.whatsapp.defaultMessage);
 
   return (
     <footer className="border-t border-border bg-bg-elev">
@@ -80,7 +81,7 @@ export function SiteFooter() {
               </span>
             </a>
             <a
-              href={whatsappHref()}
+              href={waHref}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-fg-dim hover:text-fg"

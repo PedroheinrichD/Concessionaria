@@ -15,6 +15,7 @@ const nav = [
   { href: "/admin", label: "Visão geral" },
   { href: "/admin/veiculos", label: "Veículos" },
   { href: "/admin/leads", label: "Leads" },
+  { href: "/admin/config", label: "Dados da loja" },
 ];
 
 export default async function AdminLayout({
