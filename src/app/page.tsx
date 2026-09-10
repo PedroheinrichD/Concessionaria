@@ -1,29 +1,25 @@
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import Hero from "@/components/home/Hero";
-import FeaturedVehicles from "@/components/home/FeaturedVehicles";
-import StockPreview from "@/components/home/StockPreview";
-import CinematicSection from "@/components/home/CinematicSection";
-import Benefits from "@/components/home/Benefits";
-import FinalCTA from "@/components/home/FinalCTA";
-import { getFeaturedVehicles, getVehicles } from "@/lib/vehicles";
+import { Hero } from "@/components/home/Hero";
+import { ProofBar } from "@/components/home/ProofBar";
+import { FeaturedVehicles } from "@/components/home/FeaturedVehicles";
+import { Services } from "@/components/home/Services";
+import { Financing } from "@/components/home/Financing";
+import { TradeIn } from "@/components/home/TradeIn";
+import { WhyUs } from "@/components/home/WhyUs";
+import { Testimonials } from "@/components/home/Testimonials";
+import { VisitUs } from "@/components/home/VisitUs";
 
-export default async function Home() {
-  const featured = await getFeaturedVehicles(3);
-  const stockPreview = (await getVehicles()).slice(0, 4);
-
+export default function HomePage() {
   return (
     <>
-      <Header />
-      <main>
-        <Hero />
-        <FeaturedVehicles vehicles={featured} />
-        <StockPreview vehicles={stockPreview} />
-        <CinematicSection />
-        <Benefits />
-        <FinalCTA />
-      </main>
-      <Footer />
+      <Hero />
+      <ProofBar />
+      <FeaturedVehicles />
+      <Services />
+      <Financing />
+      <TradeIn />
+      <WhyUs />
+      <Testimonials />
+      <VisitUs />
     </>
   );
 }

@@ -1,36 +1,51 @@
 import type { Metadata } from "next";
-import { Fraunces, Geist } from "next/font/google";
+import { Archivo, Inter } from "next/font/google";
 import "./globals.css";
+import { site } from "@/lib/site";
+import { SmoothScroll } from "@/components/motion/SmoothScroll";
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 
-const fraunces = Fraunces({
+const archivo = Archivo({
+  variable: "--font-archivo",
   subsets: ["latin"],
-  variable: "--font-fraunces",
-  weight: ["300", "400", "500"],
-  style: ["normal", "italic"],
   display: "swap",
 });
 
-const geist = Geist({
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  variable: "--font-geist",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Vertice Motors — Veículos Premium",
-  description:
-    "Encontre veículos selecionados, seminovos e novos na Vertice Motors.",
+  metadataBase: new URL("https://beneventoveiculos.com.br"),
+  title: {
+    default: `${site.name} - Seminovos com procedência`,
+    template: `%s - ${site.name}`,
+  },
+  description: `${site.tagline} Mais de ${site.soldCount} veículos vendidos em ${site.yearsActive} anos.`,
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: site.name,
+    title: `${site.name} - Seminovos com procedência`,
+    description: site.tagline,
+  },
+  robots: { index: true, follow: true },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-BR">
-      <body className={`${fraunces.variable} ${geist.variable}`}>
-        {children}
+    <html
+      lang="pt-BR"
+      className={`${archivo.variable} ${inter.variable}`}
+    >
+      <body className="flex min-h-[100svh] flex-col bg-bg text-fg">
+        <SmoothScroll />
+        <SiteHeader />
+        <main className="flex-1">{children}</main>
+        <SiteFooter />
       </body>
     </html>
   );

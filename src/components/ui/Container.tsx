@@ -1,11 +1,23 @@
-import { ReactNode } from "react";
-import styles from "./Container.module.css";
+import type { ReactNode } from "react";
 
-interface ContainerProps {
+export function Container({
+  children,
+  className = "",
+  width = "default",
+}: {
   children: ReactNode;
   className?: string;
-}
-
-export default function Container({ children, className = "" }: ContainerProps) {
-  return <div className={`${styles.container} ${className}`}>{children}</div>;
+  width?: "default" | "wide" | "narrow";
+}) {
+  const max =
+    width === "wide"
+      ? "max-w-[1400px]"
+      : width === "narrow"
+        ? "max-w-3xl"
+        : "max-w-[1200px]";
+  return (
+    <div className={`mx-auto w-full ${max} px-5 sm:px-8 ${className}`}>
+      {children}
+    </div>
+  );
 }
