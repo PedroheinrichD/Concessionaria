@@ -7,7 +7,7 @@ import {
   filterVehicles,
   formatPrice,
   type SortKey,
-} from "@/lib/vehicles";
+} from "@/lib/vehicle-format";
 import { VehicleCard } from "@/components/vehicle/VehicleCard";
 
 const sortLabels: Record<SortKey, string> = {

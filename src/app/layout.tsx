@@ -2,9 +2,6 @@ import type { Metadata } from "next";
 import { Archivo, Inter } from "next/font/google";
 import "./globals.css";
 import { site } from "@/lib/site";
-import { SmoothScroll } from "@/components/motion/SmoothScroll";
-import { SiteHeader } from "@/components/layout/SiteHeader";
-import { SiteFooter } from "@/components/layout/SiteFooter";
 
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -37,15 +34,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="pt-BR"
-      className={`${archivo.variable} ${inter.variable}`}
-    >
+    <html lang="pt-BR" className={`${archivo.variable} ${inter.variable}`}>
       <body className="flex min-h-[100svh] flex-col bg-bg text-fg">
-        <SmoothScroll />
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
+        {children}
       </body>
     </html>
   );

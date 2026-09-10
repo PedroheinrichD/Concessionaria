@@ -1,19 +1,20 @@
 import Link from "next/link";
 import { ArrowRight, Check } from "@phosphor-icons/react/dist/ssr";
 import { Container } from "@/components/ui/Container";
-import { Placeholder } from "@/components/ui/Placeholder";
 import { SectionIntro } from "@/components/ui/SectionIntro";
 import { Reveal } from "@/components/motion/Reveal";
-import { getFeaturedVehicles, getVehicles } from "@/lib/vehicles";
-import {
-  formatMileage,
-  formatPrice,
-  formatYear,
-} from "@/lib/vehicles";
+import { VehicleImage } from "@/components/vehicle/VehicleImage";
+import { countVehicles, getFeaturedVehicles } from "@/lib/vehicles";
+import { formatMileage, formatPrice, formatYear } from "@/lib/vehicle-format";
 
-export function FeaturedVehicles() {
-  const [hero, ...rest] = getFeaturedVehicles(3);
-  const total = getVehicles().length;
+export async function FeaturedVehicles() {
+  const [featured, total] = await Promise.all([
+    getFeaturedVehicles(3),
+    countVehicles(),
+  ]);
+  if (featured.length === 0) return null;
+
+  const [hero, ...rest] = featured;
 
   return (
     <section className="py-16 md:py-24">
@@ -45,11 +46,12 @@ export function FeaturedVehicles() {
               className="group flex h-full flex-col overflow-hidden rounded border border-border bg-surface transition-colors duration-300 hover:border-border-strong"
             >
               <div className="overflow-hidden">
-                {/* TODO: foto real do veículo */}
                 <div className="transition-transform duration-500 ease-[cubic-bezier(0.65,0,0.35,1)] group-hover:scale-[1.03]">
-                  <Placeholder
+                  <VehicleImage
+                    photo={hero.photos[0]}
                     label={`${hero.brand} ${hero.model} ${hero.version}`}
                     ratio="16 / 10"
+                    sizes="(max-width: 1024px) 100vw, 55vw"
                     className="rounded-none border-0"
                   />
                 </div>
@@ -98,12 +100,12 @@ export function FeaturedVehicles() {
                   className="group flex h-full items-stretch overflow-hidden rounded border border-border bg-surface transition-colors duration-300 hover:border-border-strong"
                 >
                   <div className="relative w-[46%] shrink-0 overflow-hidden">
-                    {/* TODO: foto real do veículo */}
                     <div className="absolute inset-0 transition-transform duration-500 ease-[cubic-bezier(0.65,0,0.35,1)] group-hover:scale-[1.04]">
-                      <Placeholder
+                      <VehicleImage
+                        photo={v.photos[0]}
                         label={`${v.brand} ${v.model}`}
                         ratio="1 / 1"
-                        compact
+                        sizes="(max-width: 1024px) 46vw, 23vw"
                         className="h-full w-full rounded-none border-0"
                       />
                     </div>

@@ -6,6 +6,7 @@ import { Container } from "@/components/ui/Container";
 import { SplitLines } from "@/components/motion/SplitLines";
 import { Reveal } from "@/components/motion/Reveal";
 import { whatsappHref } from "@/components/ui/WhatsappCta";
+import { submitTradeLead } from "@/app/actions/leads";
 
 type Field = "nome" | "telefone" | "carro";
 
@@ -18,11 +19,14 @@ export function TradeIn() {
     km: "",
   });
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
   function update(name: keyof typeof values, value: string) {
     setValues((v) => ({ ...v, [name]: value }));
     if (name in errors) setErrors((e) => ({ ...e, [name]: undefined }));
+    setFormError(null);
   }
 
   function validate() {
@@ -37,9 +41,35 @@ export function TradeIn() {
     return Object.keys(next).length === 0;
   }
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!validate()) return;
+
+    setSubmitting(true);
+    setFormError(null);
+    const result = await submitTradeLead({
+      name: values.nome,
+      phone: values.telefone,
+      car: values.carro,
+      km: values.km,
+    });
+    setSubmitting(false);
+
+    if (!result.ok) {
+      const map: Record<string, Field> = {
+        name: "nome",
+        phone: "telefone",
+        car: "carro",
+      };
+      const mapped: Partial<Record<Field, string>> = {};
+      for (const [k, v] of Object.entries(result.fieldErrors ?? {})) {
+        if (map[k]) mapped[map[k]] = v;
+      }
+      setErrors(mapped);
+      setFormError(result.error);
+      return;
+    }
+
     const msg = [
       "Olá! Quero avaliar meu carro para troca.",
       `Nome: ${values.nome}`,
@@ -94,11 +124,11 @@ export function TradeIn() {
                   <Check size={22} weight="bold" />
                 </span>
                 <h3 className="font-display text-xl font-semibold text-fg">
-                  Abrimos o WhatsApp com seus dados
+                  Pedido de avaliação registrado
                 </h3>
                 <p className="text-[0.95rem] text-fg-dim">
-                  É só enviar a mensagem que já está pronta. Se o app não abriu,
-                  chame a gente em {" "}
+                  A gente retorna com uma faixa de valor. Abrimos o WhatsApp
+                  também, se quiser adiantar. Se o app não abriu, chame em {" "}
                   <a
                     className="text-accent hover:text-accent-hover"
                     href={whatsappHref()}
@@ -206,15 +236,22 @@ export function TradeIn() {
                   />
                 </div>
 
+                {formError ? (
+                  <p role="alert" className="text-[0.85rem] text-accent-hover">
+                    {formError}
+                  </p>
+                ) : null}
+
                 <button
                   type="submit"
-                  className="mt-1 inline-flex h-12 items-center justify-center rounded bg-accent px-6 font-medium text-accent-ink transition-colors duration-200 hover:bg-accent-hover active:translate-y-px"
+                  disabled={submitting}
+                  className="mt-1 inline-flex h-12 items-center justify-center rounded bg-accent px-6 font-medium text-accent-ink transition-colors duration-200 hover:bg-accent-hover active:translate-y-px disabled:opacity-60"
                 >
-                  Pedir avaliação
+                  {submitting ? "Enviando…" : "Pedir avaliação"}
                 </button>
                 <p className="text-[0.78rem] text-muted">
-                  Ao enviar, abrimos o WhatsApp com a mensagem preenchida. Você
-                  confere e envia.
+                  O pedido é registrado e também abrimos o WhatsApp para você
+                  conferir.
                 </p>
               </form>
             )}

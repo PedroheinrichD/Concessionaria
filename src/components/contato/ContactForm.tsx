@@ -3,6 +3,7 @@
 import { useId, useState, type FormEvent } from "react";
 import { Check } from "@phosphor-icons/react/dist/ssr";
 import { whatsappHref } from "@/components/ui/WhatsappCta";
+import { submitContactLead } from "@/app/actions/leads";
 
 const subjects = [
   "Quero comprar um carro",
@@ -23,14 +24,17 @@ export function ContactForm() {
     mensagem: "",
   });
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
   function update(name: keyof typeof values, value: string) {
     setValues((v) => ({ ...v, [name]: value }));
     setErrors((e) => ({ ...e, [name]: undefined }));
+    setFormError(null);
   }
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     const next: Partial<Record<Field, string>> = {};
     if (values.nome.trim().length < 2) next.nome = "Como podemos te chamar?";
@@ -40,6 +44,31 @@ export function ContactForm() {
       next.mensagem = "Escreva uma mensagem rápida para a gente.";
     setErrors(next);
     if (Object.keys(next).length > 0) return;
+
+    setSubmitting(true);
+    setFormError(null);
+    const result = await submitContactLead({
+      name: values.nome,
+      phone: values.telefone,
+      subject: values.assunto,
+      message: values.mensagem,
+    });
+    setSubmitting(false);
+
+    if (!result.ok) {
+      const map: Record<string, Field> = {
+        name: "nome",
+        phone: "telefone",
+        message: "mensagem",
+      };
+      const mapped: Partial<Record<Field, string>> = {};
+      for (const [k, v] of Object.entries(result.fieldErrors ?? {})) {
+        if (map[k]) mapped[map[k]] = v;
+      }
+      setErrors(mapped);
+      setFormError(result.error);
+      return;
+    }
 
     const msg = [
       values.assunto,
@@ -62,11 +91,11 @@ export function ContactForm() {
           <Check size={22} weight="bold" />
         </span>
         <h2 className="font-display text-xl font-semibold text-fg">
-          Mensagem pronta no WhatsApp
+          Recebemos sua mensagem
         </h2>
         <p className="text-[0.95rem] text-fg-dim">
-          Abrimos o WhatsApp com o que você escreveu. É só enviar. Se não abriu,
-          fale com a gente em{" "}
+          Já está registrada e a gente responde em breve. Abrimos o WhatsApp
+          também, se preferir adiantar por lá. Se não abriu, fale com a gente em{" "}
           <a
             className="text-accent hover:text-accent-hover"
             href={whatsappHref()}
@@ -175,14 +204,21 @@ export function ContactForm() {
         ) : null}
       </div>
 
+      {formError ? (
+        <p role="alert" className="text-[0.85rem] text-accent-hover">
+          {formError}
+        </p>
+      ) : null}
+
       <button
         type="submit"
-        className="inline-flex h-12 items-center justify-center rounded bg-accent px-6 font-medium text-accent-ink transition-colors duration-200 hover:bg-accent-hover active:translate-y-px"
+        disabled={submitting}
+        className="inline-flex h-12 items-center justify-center rounded bg-accent px-6 font-medium text-accent-ink transition-colors duration-200 hover:bg-accent-hover active:translate-y-px disabled:opacity-60"
       >
-        Enviar pelo WhatsApp
+        {submitting ? "Enviando…" : "Enviar mensagem"}
       </button>
       <p className="text-[0.78rem] text-muted">
-        O envio abre o WhatsApp com a mensagem preenchida para você conferir.
+        A mensagem é registrada e também abrimos o WhatsApp para você conferir.
       </p>
     </form>
   );

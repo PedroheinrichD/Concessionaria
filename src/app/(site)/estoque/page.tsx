@@ -16,10 +16,16 @@ export const metadata: Metadata = {
     "Todos os seminovos disponíveis na Benevento's Veículos. Filtre por marca, carroceria e preço.",
 };
 
-export default function EstoquePage() {
-  const vehicles = getVehicles();
-  const { max } = getPriceRange();
-  const ceiling = Math.ceil(max / 5000) * 5000;
+export const dynamic = "force-dynamic";
+
+export default async function EstoquePage() {
+  const [vehicles, brands, bodies, { max }] = await Promise.all([
+    getVehicles(),
+    getBrands(),
+    getBodyTypes(),
+    getPriceRange(),
+  ]);
+  const ceiling = Math.max(Math.ceil(max / 5000) * 5000, 5000);
 
   return (
     <>
@@ -44,8 +50,8 @@ export default function EstoquePage() {
         <Container width="wide">
           <EstoqueBrowser
             vehicles={vehicles}
-            brands={getBrands()}
-            bodies={getBodyTypes()}
+            brands={brands}
+            bodies={bodies}
             priceCeiling={ceiling}
           />
         </Container>

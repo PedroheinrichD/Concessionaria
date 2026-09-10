@@ -3,7 +3,7 @@ import { Container } from "@/components/ui/Container";
 import { SplitLines } from "@/components/motion/SplitLines";
 import { Reveal } from "@/components/motion/Reveal";
 import { WhatsappCta } from "@/components/ui/WhatsappCta";
-import { formatPrice } from "@/lib/vehicles";
+import { formatPrice } from "@/lib/vehicle-format";
 
 const checklist = [
   "CNH válida",

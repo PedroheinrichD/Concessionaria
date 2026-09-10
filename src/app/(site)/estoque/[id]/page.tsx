@@ -6,25 +6,18 @@ import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/motion/Reveal";
 import { Gallery } from "@/components/vehicle/Gallery";
 import { VehicleCard } from "@/components/vehicle/VehicleCard";
+import { VehicleInterestForm } from "@/components/vehicle/VehicleInterestForm";
 import { WhatsappCta } from "@/components/ui/WhatsappCta";
-import {
-  getVehicleById,
-  getVehicles,
-  getRelatedVehicles,
-  formatPrice,
-  formatMileage,
-  formatYear,
-} from "@/lib/vehicles";
+import { getVehicleBySlug, getRelatedVehicles } from "@/lib/vehicles";
+import { formatPrice, formatMileage, formatYear } from "@/lib/vehicle-format";
 
-export function generateStaticParams() {
-  return getVehicles().map((v) => ({ id: v.id }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
 }: PageProps<"/estoque/[id]">): Promise<Metadata> {
   const { id } = await params;
-  const v = getVehicleById(id);
+  const v = await getVehicleBySlug(id);
   if (!v) return { title: "Veículo não encontrado" };
   return {
     title: `${v.brand} ${v.model} ${v.version} ${v.year}`,
@@ -32,14 +25,19 @@ export async function generateMetadata({
   };
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  reservado: "Reservado",
+  vendido: "Vendido",
+};
+
 export default async function VehiclePage({
   params,
 }: PageProps<"/estoque/[id]">) {
   const { id } = await params;
-  const vehicle = getVehicleById(id);
+  const vehicle = await getVehicleBySlug(id);
   if (!vehicle) notFound();
 
-  const related = getRelatedVehicles(id, 3);
+  const related = await getRelatedVehicles(id, 3);
 
   const specGroups: { title: string; rows: [string, string][] }[] = [
     {
@@ -58,6 +56,7 @@ export default async function VehiclePage({
       rows: [
         ["Cor", vehicle.color],
         ["Final de placa", String(vehicle.plateEnd)],
+        ["Situação", STATUS_LABEL[vehicle.status] ?? "Disponível"],
       ],
     },
   ];
@@ -83,12 +82,17 @@ export default async function VehiclePage({
           <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr]">
             <Gallery
               name={`${vehicle.brand} ${vehicle.model}`}
-              count={vehicle.photoCount}
+              photos={vehicle.photos}
             />
 
             <div className="lg:sticky lg:top-24 lg:self-start">
               <div className="flex flex-col gap-6 rounded border border-border bg-surface p-7">
                 <div className="flex flex-col gap-1">
+                  {vehicle.status !== "disponivel" ? (
+                    <span className="mb-1 inline-flex w-fit rounded bg-accent px-2 py-0.5 text-[0.7rem] font-medium text-accent-ink">
+                      {STATUS_LABEL[vehicle.status]}
+                    </span>
+                  ) : null}
                   <h1 className="font-display text-2xl font-semibold text-fg">
                     {vehicle.brand} {vehicle.model}
                   </h1>
@@ -127,6 +131,10 @@ export default async function VehiclePage({
                   >
                     Simular financiamento
                   </WhatsappCta>
+                </div>
+
+                <div className="border-t border-border pt-5">
+                  <VehicleInterestForm vehicleSlug={vehicle.id} />
                 </div>
               </div>
             </div>

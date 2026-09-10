@@ -8,6 +8,8 @@ import { WhyUs } from "@/components/home/WhyUs";
 import { Testimonials } from "@/components/home/Testimonials";
 import { VisitUs } from "@/components/home/VisitUs";
 
+export const dynamic = "force-dynamic";
+
 export default function HomePage() {
   return (
     <>

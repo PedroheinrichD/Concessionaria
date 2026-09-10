@@ -9,6 +9,13 @@ export type Transmission = "Manual" | "Automático" | "Automatizado" | "CVT";
 
 export type BodyType = "Hatch" | "Sedã" | "SUV" | "Picape" | "Minivan";
 
+export type VehicleStatus = "disponivel" | "reservado" | "vendido";
+
+export interface VehiclePhoto {
+  url: string;
+  alt: string | null;
+}
+
 export interface Vehicle {
   /** slug usado na rota /estoque/[id] */
   id: string;
@@ -31,11 +38,14 @@ export interface Vehicle {
   /** final da placa (rodízio) */
   plateEnd: number;
   featured: boolean;
+  status: VehicleStatus;
   /** 2 a 3 pontos de venda curtos */
   highlights: string[];
   /** itens de série e opcionais */
   features: string[];
   description: string;
-  /** quantas fotos a galeria tem (placeholders por enquanto) */
+  /** quantas fotos a galeria tem */
   photoCount: number;
+  /** fotos reais (veiculo_fotos), ordenadas por position. Vazio => usa Placeholder */
+  photos: VehiclePhoto[];
 }

@@ -9,8 +9,8 @@ import {
   formatMileage,
   formatPrice,
   formatYear,
-} from "@/lib/vehicles";
-import { Placeholder } from "@/components/ui/Placeholder";
+} from "@/lib/vehicle-format";
+import { VehicleImage } from "@/components/vehicle/VehicleImage";
 
 export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
   return (
@@ -19,9 +19,9 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
       className="group flex flex-col overflow-hidden rounded border border-border bg-surface transition-colors duration-300 hover:border-border-strong"
     >
       <div className="relative overflow-hidden">
-        {/* TODO: foto real do veículo */}
         <div className="transition-transform duration-500 ease-[cubic-bezier(0.65,0,0.35,1)] group-hover:scale-[1.03]">
-          <Placeholder
+          <VehicleImage
+            photo={vehicle.photos[0]}
             label={`${vehicle.brand} ${vehicle.model}`}
             ratio="4 / 3"
             className="rounded-none border-0"
@@ -30,6 +30,11 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
         <span className="absolute left-3 top-3 rounded bg-bg/80 px-2 py-1 text-[0.7rem] text-fg-dim backdrop-blur-sm">
           {vehicle.body}
         </span>
+        {vehicle.status !== "disponivel" ? (
+          <span className="absolute right-3 top-3 rounded bg-accent px-2 py-1 text-[0.7rem] font-medium text-accent-ink">
+            {vehicle.status === "reservado" ? "Reservado" : "Vendido"}
+          </span>
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col gap-4 p-5">

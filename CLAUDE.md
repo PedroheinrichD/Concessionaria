@@ -47,6 +47,13 @@ npm run build
 npx tsc --noEmit     # checagem de tipos
 npx eslint src       # lint
 npx next typegen     # regenera PageProps/LayoutProps se preciso
+npm run db:test      # testa a conexão com o Postgres do Supabase
+npm run db:verify    # confere tabelas / enums / FKs / índices no banco
+npm run db:seed      # (re)popula veículos, fotos, depoimentos, config (idempotente)
+npm run db:studio    # abre o Prisma Studio
+npm run admin:create # cria o usuário admin no Supabase Auth a partir do .env
+npx prisma migrate dev --name <x>   # nova migration (Session pooler)
+npx prisma generate  # regenera o Prisma Client (roda no postinstall também)
 ```
 
 Rodar `tsc --noEmit` + `eslint src` + `next build` antes de considerar
@@ -56,15 +63,25 @@ qualquer etapa concluída.
 
 ```
 src/
+  proxy.ts               protege /admin/* (Next 16, ex-middleware.ts)
   app/
-    layout.tsx           fonts, metadata (pt-BR), SmoothScroll + Header + Footer
+    layout.tsx           só <html><body> + fonts + metadata
     globals.css          @import tailwindcss + tokens (@theme) + base + motion CSS
-    page.tsx             Home (compõe as seções de components/home)
     icon.svg             favicon (monograma B)
-    not-found.tsx  sitemap.ts
-    estoque/page.tsx           catálogo (usa EstoqueBrowser)
-    estoque/[id]/page.tsx      página do veículo (generateStaticParams + generateMetadata)
-    sobre/page.tsx  contato/page.tsx
+    not-found.tsx        404 global (sem chrome)
+    sitemap.ts           rotas + slugs de veiculos do banco
+    (site)/              route group do site público
+      layout.tsx         SmoothScroll + SiteHeader + SiteFooter
+      page.tsx           Home
+      not-found.tsx      404 com chrome (usado pelo notFound() das rotas de site)
+      estoque/page.tsx           catálogo (EstoqueBrowser), força dynamic
+      estoque/[id]/page.tsx      página do veículo por slug + generateMetadata
+      sobre/page.tsx  contato/page.tsx
+    admin/              painel (fora do (site), shell próprio)
+      layout.tsx  login/  page.tsx (stats)  leads/  veiculos/
+    actions/
+      leads.ts           "use server" - submitContact/Trade/InterestLead
+      auth.ts            "use server" - signIn / signOut (Supabase Auth)
 
   components/
     motion/    SmoothScroll, Reveal, SplitLines, Parallax, Magnetic
@@ -73,17 +90,28 @@ src/
                SectionIntro, Placeholder
     home/      Hero, ProofBar, FeaturedVehicles, Services, Financing,
                TradeIn, WhyUs, Testimonials, VisitUs
-    vehicle/   VehicleCard, EstoqueBrowser (client, filtros), Gallery (client, lightbox)
+    vehicle/   VehicleCard, VehicleImage, EstoqueBrowser (client), Gallery (client),
+               VehicleInterestForm (client)
     contato/   ContactForm (client)
 
-  data/vehicles.ts     array mockado, 14 veículos (modelos vistos no Instagram)
-  types/vehicle.ts     interface Vehicle
+  types/vehicle.ts     interface Vehicle (+ VehiclePhoto, VehicleStatus)
   lib/
-    site.ts            dados institucionais (nome, contato, horário) - TEM PLACEHOLDERS
-    vehicles.ts        camada de acesso: getVehicles, getFeaturedVehicles,
-                       getVehicleById, getRelatedVehicles, getBrands, getBodyTypes,
-                       getPriceRange, filterVehicles, formatPrice/Mileage/Year
+    site.ts            dados institucionais - TEM PLACEHOLDERS (ver "Banco de dados")
+    db.ts              PrismaClient server-only + adapter pg + omit dos campos admin
+    vehicles.ts        server-only, Prisma. get* + toVehicle()
+    vehicle-format.ts  puro/isomórfico: formatPrice/Mileage/Year, filterVehicles
+    content.ts         server-only: getTestimonials()
+    leads.ts           server-only: valida (zod) + grava leads
+    admin.ts           server-only: consultas do painel (leads, veículos c/ campos internos)
+    auth.ts            server-only: getCurrentUser / requireUser
+    supabase/          config.ts, server.ts, client.ts (Supabase Auth SSR)
     useIsomorphicLayoutEffect.ts
+
+prisma/schema.prisma   modelos do banco (ver "Banco de dados")
+prisma/migrations/     20260910174458_init
+prisma/seed.mjs        dados iniciais (npm run db:seed)
+prisma.config.ts       config do Prisma 7 (schema + URL de migrations, lê do .env)
+scripts/               db-test.mjs, db-verify.mjs, create-admin.mjs
 ```
 
 ## Design system
@@ -187,25 +215,90 @@ Trocar o mock por API/CMS = editar só `lib/vehicles.ts`.
 
 ### Banco de dados
 
-- **Engine:** PostgreSQL (via Supabase)
-- **ORM:** Prisma (recomendado) ou raw queries via `@supabase/supabase-js`
-- **Tabelas:**
-  1. `veiculos` — marca, modelo, versão, ano, preço, km, combustível, câmbio, carroceria, cor, etc. (54 campos)
-  2. `veiculo_fotos` — id, veiculo_id, url, ordem
-  3. `leads` — tipo (contato/troca/interesse/financiamento), nome, telefone, assunto, mensagem, veiculo_id (opcional), status
-  4. `depoimentos` — texto, autor, contexto, publicado, ordem
-  5. `configuracoes` — site-wide: nome, slogan, WhatsApp, email, endereço, horários, Google Maps URL
-  - PostgreSQL via Supabase
-- Prisma como ORM
-- Nunca acessar o banco diretamente espalhando queries pelo frontend
+- **Engine:** PostgreSQL, hospedado no Supabase (projeto `vetqzeeefvqvxiekzokw`).
+- **ORM:** Prisma 7 (`prisma` + `@prisma/client` + `@prisma/adapter-pg` + `pg`).
 
-- Toda alteração de schema deve ser feita via Prisma migrations
-- Dados de produção nunca devem ser commitados
-- Usar `.env` / `.env.local` para credenciais
-- O banco de desenvolvimento pode usar um projeto Supabase separado do banco de produção
-- O banco de produção será provisionado no ambiente do cliente na entrega
+**Arquitetura Prisma 7 (mudou):**
+- O schema fica em `prisma/schema.prisma`. O `datasource` só declara `provider`,
+  **nunca a URL** (o Prisma 7 proíbe `url` no schema).
+- `prisma.config.ts` (raiz) tem a URL para CLI/migrations, lida de `env("DATABASE_URL")`.
+  Carrega o `.env` com `process.loadEnvFile(".env")` (o Prisma 7 não carrega `.env`
+  sozinho quando existe `prisma.config.ts`).
+- Runtime: `src/lib/db.ts` cria o `PrismaClient` com o adapter `PrismaPg`
+  (`new PrismaPg(process.env.DATABASE_URL)`). Tem `import "server-only"` no topo:
+  o build quebra se for importado de um Client Component. `DATABASE_URL` não tem
+  prefixo `NEXT_PUBLIC_`, então nunca vai para o browser.
+- **Campos administrativos de `Vehicle`** (`licensePlate`, `renavam`, `chassis`,
+  `fipeCode`, `purchaseCost`, `internalNotes`): `omit` global no `PrismaClient`
+  (`VEHICLE_ADMIN_FIELDS` em `src/lib/db.ts`). Toda query os exclui por padrão;
+  só `src/lib/admin.ts` (`getVehiclesForAdmin`, com `omit: { <campo>: false }`)
+  os lê. Verificado em runtime: cliente público devolve 22 campos, sem os 6.
+- `postinstall` roda `prisma generate`. Scripts: `db:test` (conexão),
+  `db:verify` (tabelas/enums/FKs/índices), `db:seed`, `db:studio`,
+  `admin:create` (cria o usuário admin no Supabase Auth a partir do `.env`).
+- Credenciais só em `.env` (coberto por `.gitignore`, padrão `.env*`).
 
-**Status:** TODO - banco não foi criado ainda. Será criado quando o cliente fornecer as credenciais do Supabase.
+**Fluxo de dados (mocks -> banco):** `data/vehicles.ts` foi removido. A UI
+consome de:
+- `src/lib/vehicle-format.ts` — puro (formatação + `filterVehicles`), isomórfico,
+  usado pelo `EstoqueBrowser` (client) e por Server Components.
+- `src/lib/vehicles.ts` — `server-only`, Prisma. `getVehicles`, `getFeaturedVehicles`,
+  `getVehicleBySlug` (cacheada, = `getVehicleById`), `getRelatedVehicles`,
+  `getBrands`, `getBodyTypes`, `getPriceRange`, `countVehicles`. `toVehicle()`
+  mapeia a linha do Prisma para o `Vehicle` do front (enum -> rótulo, `id` = slug,
+  `photos` de `veiculo_fotos`).
+- `src/lib/content.ts` — `getTestimonials()` (tabela `depoimentos`).
+- `/`, `/estoque`, `/estoque/[id]` são `dynamic = "force-dynamic"` (sempre
+  refletem o banco). `/sobre` e `/contato` continuam estáticas.
+- `VehicleImage` renderiza `veiculo_fotos` via `next/image` (host liberado em
+  `next.config.ts` `images.remotePatterns`); sem foto cai no `Placeholder`.
+
+**Leads:** `src/lib/leads.ts` (`server-only`, valida com `zod`) +
+`src/app/actions/leads.ts` (`"use server"`). `ContactForm`, `TradeIn` e
+`VehicleInterestForm` chamam a action, gravam em `leads` (status `NEW`,
+`vehicleId` quando há veículo) e ainda abrem o WhatsApp. **Nenhuma leitura
+pública de `leads`** — só `src/lib/admin.ts`, dentro de `/admin`.
+
+**Auth / admin (Supabase Auth, sem Better Auth, sem auth própria):**
+- `src/lib/supabase/{config,server,client}.ts` — clientes SSR/browser.
+- `src/proxy.ts` (ex-`middleware.ts`; Next 16 renomeou) — protege `/admin/*`
+  (`matcher`), renova a sessão. Sem Supabase configurado, `/admin/*` (menos
+  `/admin/login`) redireciona para o login.
+- `src/lib/auth.ts` — `getCurrentUser()` (nunca lança), `requireUser()` (redirect).
+- Route group `src/app/(site)/` tem o shell público (SmoothScroll + header +
+  footer); `src/app/admin/` fica fora dele e tem shell próprio. `layout.tsx`
+  raiz virou só `<html><body>`.
+- Páginas: `/admin/login`, `/admin` (stats), `/admin/leads`, `/admin/veiculos`
+  (com os campos internos). CRUD de veículos/fotos fica para a próxima etapa —
+  a infra (`admin.ts`, auth, omit opt-in) já está pronta.
+- `.env`: `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` (a anon
+  key é pública por design). `SUPABASE_SERVICE_ROLE_KEY` é segredo, sem
+  `NEXT_PUBLIC_`, usado só pelo `admin:create`.
+
+**Tabelas** (nomes em pt-BR via `@@map`; modelos/campos em inglês para casar
+com `src/types/vehicle.ts`):
+1. `veiculos` — `Vehicle`: slug, brand, model, version, year, manufactureYear,
+   price (R$ inteiros), mileage, fuel/transmission/body (enums), color, doors,
+   plateEnd, featured, status, highlights[] , features[], description, timestamps.
+   Campos internos (placa, renavam, chassi, fipe, custo, notas) nunca vão ao site.
+2. `veiculo_fotos` — `VehiclePhoto`: vehicleId, url, alt, position (capa = menor).
+3. `leads` — `Lead`: kind (CONTATO/TROCA/INTERESSE/FINANCIAMENTO), name, phone,
+   subject, message, tradeCar, tradeKm, vehicleId?, status.
+4. `depoimentos` — `Testimonial`: quote, author, context, published, position.
+5. `configuracoes` — `SiteConfig`: linha única (`id = "default"`). Espelha
+   `src/lib/site.ts` (o site ainda lê de `site.ts`; a tabela existe seedada e
+   pronta para migrar quando o cliente enviar os dados reais).
+
+**Status:** migration `prisma/migrations/20260910174458_init` aplicada no
+Supabase (Session pooler, PostgreSQL 17.6). `db:verify`: 5 tabelas + 6 enums +
+2 FKs + 15 índices. Seed: 14 veículos, 89 fotos (picsum, dev), 4 depoimentos,
+1 config. `db:test` / `tsc` / `eslint` / `next build` passam.
+
+Migrations futuras: `prisma migrate dev --name <x>` (Session pooler suporta).
+Para produção/serverless: `DATABASE_URL` no pooler **transaction** (6543,
+`?pgbouncer=true`) + `directUrl` no **session** (5432) no `datasource`.
+As fotos de dev (`picsum.photos`) saem quando o cliente enviar as reais →
+Supabase Storage (host já liberado em `next.config.ts`).
 
 ## Pendências / o que precisa dos dados reais do cliente
 

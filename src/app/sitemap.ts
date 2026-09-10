@@ -3,13 +3,14 @@ import { getVehicles } from "@/lib/vehicles";
 
 const base = "https://beneventoveiculos.com.br";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes = ["", "/estoque", "/sobre", "/contato"].map((path) => ({
     url: `${base}${path}`,
     lastModified: new Date(),
   }));
 
-  const vehicleRoutes = getVehicles().map((v) => ({
+  const vehicles = await getVehicles();
+  const vehicleRoutes = vehicles.map((v) => ({
     url: `${base}/estoque/${v.id}`,
     lastModified: new Date(),
   }));
