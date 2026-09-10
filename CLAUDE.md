@@ -185,6 +185,19 @@ Trocar o mock por API/CMS = editar só `lib/vehicles.ts`.
 - Formulários (troca, contato) não têm backend: montam uma mensagem e abrem o
   `wa.me` com o texto pré-preenchido, depois mostram estado de sucesso.
 
+### Banco de dados
+
+- **Engine:** PostgreSQL (via Supabase)
+- **ORM:** Prisma (recomendado) ou raw queries via `@supabase/supabase-js`
+- **Tabelas:**
+  1. `veiculos` — marca, modelo, versão, ano, preço, km, combustível, câmbio, carroceria, cor, etc. (54 campos)
+  2. `veiculo_fotos` — id, veiculo_id, url, ordem
+  3. `leads` — tipo (contato/troca/interesse/financiamento), nome, telefone, assunto, mensagem, veiculo_id (opcional), status
+  4. `depoimentos` — texto, autor, contexto, publicado, ordem
+  5. `configuracoes` — site-wide: nome, slogan, WhatsApp, email, endereço, horários, Google Maps URL
+
+**Status:** TODO - banco não foi criado ainda. Será criado quando o cliente fornecer as credenciais do Supabase.
+
 ## Pendências / o que precisa dos dados reais do cliente
 
 Tudo marcado com `// TODO` e concentrado em `src/lib/site.ts`:
