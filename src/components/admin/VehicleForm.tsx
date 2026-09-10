@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, startTransition, type FormEvent } from "react";
 import { saveVehicle, type VehicleFormState } from "@/app/actions/vehicles";
 import {
   FUEL_OPTIONS,
@@ -61,8 +61,17 @@ export function VehicleForm({ vehicle }: { vehicle?: VehicleLike }) {
   const fe = state.fieldErrors ?? {};
   const editing = Boolean(vehicle);
 
+  // Envio manual: com <form action={fn}> o React 19 chama form.reset() sempre
+  // que a action termina, inclusive em erro de validação. Aqui os campos só
+  // somem quando o próprio fluxo resolve (novo -> redireciona; edição -> mantém).
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    startTransition(() => action(data));
+  }
+
   return (
-    <form action={action} className="flex flex-col gap-8">
+    <form onSubmit={onSubmit} className="flex flex-col gap-8">
       {vehicle ? <input type="hidden" name="id" value={vehicle.id} /> : null}
 
       <fieldset className="grid gap-4 sm:grid-cols-2">
@@ -223,7 +232,7 @@ export function VehicleForm({ vehicle }: { vehicle?: VehicleLike }) {
 
       <fieldset className="grid gap-4 rounded border border-border-strong bg-bg-elev/40 p-4 sm:grid-cols-3">
         <legend className="mb-2 font-display text-sm font-semibold text-fg">
-          Interno (não aparece no site)
+          Interno (opcional, não aparece no site)
         </legend>
         <label className="flex flex-col gap-1 text-[0.82rem] text-fg-dim">
           Placa
