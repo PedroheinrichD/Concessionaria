@@ -15,6 +15,7 @@ export type VehicleFormState = {
   ok: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
+  id?: string;
 };
 
 function fieldErrors(err: z.ZodError): Record<string, string> {
@@ -79,8 +80,9 @@ export async function saveVehicle(
     return { ok: false, error: "Não foi possível salvar. Tente de novo." };
   }
 
-  if (newId) redirect(`/admin/veiculos/${newId}`);
-  return { ok: true };
+  // Sem redirect() aqui: o client precisa do id pra subir as fotos escolhidas
+  // no formulário de criação antes de navegar pra tela de edição.
+  return newId ? { ok: true, id: newId } : { ok: true };
 }
 
 export async function deleteVehicle(id: string): Promise<void> {

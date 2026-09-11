@@ -1,13 +1,20 @@
 "use client";
 
-import { useActionState, startTransition, type FormEvent } from "react";
-import { saveVehicle, type VehicleFormState } from "@/app/actions/vehicles";
+import { useState, startTransition, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  saveVehicle,
+  uploadVehiclePhotos,
+  type VehicleFormState,
+} from "@/app/actions/vehicles";
 import {
   FUEL_OPTIONS,
   TRANSMISSION_OPTIONS,
   BODY_OPTIONS,
   STATUS_OPTIONS,
 } from "@/lib/vehicle-schema";
+import { PhotoPicker } from "@/components/admin/PhotoPicker";
 
 type VehicleLike = {
   id: string;
@@ -57,17 +64,52 @@ function FieldError({
 }
 
 export function VehicleForm({ vehicle }: { vehicle?: VehicleLike }) {
-  const [state, action, pending] = useActionState(saveVehicle, initial);
-  const fe = state.fieldErrors ?? {};
+  const router = useRouter();
   const editing = Boolean(vehicle);
 
-  // Envio manual: com <form action={fn}> o React 19 chama form.reset() sempre
-  // que a action termina, inclusive em erro de validação. Aqui os campos só
-  // somem quando o próprio fluxo resolve (novo -> redireciona; edição -> mantém).
+  const [state, setState] = useState<VehicleFormState>(initial);
+  const fe = state.fieldErrors ?? {};
+  const [phase, setPhase] = useState<"idle" | "saving" | "uploading">("idle");
+  const pending = phase !== "idle";
+
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
+  // Envio manual (sem <form action={fn}>: o React 19 chamaria form.reset()
+  // sempre que a action terminasse, inclusive em erro de validação). Salva o
+  // veículo e, se for criação com fotos escolhidas, sobe as fotos antes de
+  // navegar - tudo em sequência aqui, sem precisar de efeito pra reagir ao
+  // resultado da action.
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    startTransition(() => action(data));
+    setPhotoError(null);
+    setPhase("saving");
+    startTransition(async () => {
+      const result = await saveVehicle(state, data);
+      setState(result);
+
+      if (!editing && result.ok && result.id) {
+        const id = result.id;
+        if (photos.length > 0) {
+          setPhase("uploading");
+          const fd = new FormData();
+          photos.forEach((f) => fd.append("files", f));
+          const res = await uploadVehiclePhotos(id, fd);
+          if (!res.ok) {
+            setPhotoError(
+              res.error ??
+                "O veículo foi criado, mas as fotos não subiram. Tente de novo abaixo ou na tela de edição.",
+            );
+            setPhase("idle");
+            return;
+          }
+        }
+        router.push(`/admin/veiculos/${id}`);
+        return;
+      }
+      setPhase("idle");
+    });
   }
 
   return (
@@ -260,6 +302,18 @@ export function VehicleForm({ vehicle }: { vehicle?: VehicleLike }) {
         </label>
       </fieldset>
 
+      {!editing ? (
+        <fieldset className="flex flex-col gap-3">
+          <legend className="mb-1 font-display text-sm font-semibold text-fg">
+            Fotos
+          </legend>
+          <PhotoPicker files={photos} onChange={setPhotos} disabled={pending} />
+          <p className="text-[0.78rem] text-muted">
+            As fotos são enviadas assim que o veículo for criado.
+          </p>
+        </fieldset>
+      ) : null}
+
       {state.error ? (
         <p role="alert" className="text-[0.88rem] text-accent-hover">
           {state.error}
@@ -268,6 +322,19 @@ export function VehicleForm({ vehicle }: { vehicle?: VehicleLike }) {
       {state.ok && editing ? (
         <p className="text-[0.88rem] text-accent">Alterações salvas.</p>
       ) : null}
+      {photoError ? (
+        <div className="flex flex-col gap-2 rounded border border-accent/30 bg-accent/5 p-3 text-[0.85rem] text-accent-hover">
+          <p role="alert">{photoError}</p>
+          {state.id ? (
+            <Link
+              href={`/admin/veiculos/${state.id}`}
+              className="w-fit underline underline-offset-2"
+            >
+              Ir para o veículo criado
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="flex gap-3">
         <button
@@ -275,7 +342,13 @@ export function VehicleForm({ vehicle }: { vehicle?: VehicleLike }) {
           disabled={pending}
           className="inline-flex h-11 items-center justify-center rounded bg-accent px-6 font-medium text-accent-ink hover:bg-accent-hover active:translate-y-px disabled:opacity-60"
         >
-          {pending ? "Salvando…" : editing ? "Salvar alterações" : "Criar veículo"}
+          {phase === "saving"
+            ? "Salvando…"
+            : phase === "uploading"
+              ? "Enviando fotos…"
+              : editing
+                ? "Salvar alterações"
+                : "Criar veículo"}
         </button>
       </div>
     </form>

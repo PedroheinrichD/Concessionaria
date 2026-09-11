@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import Image from "next/image";
 import { ArrowUp, ArrowDown, Trash, UploadSimple } from "@phosphor-icons/react/dist/ssr";
 import {
@@ -8,6 +8,7 @@ import {
   removeVehiclePhoto,
   moveVehiclePhoto,
 } from "@/app/actions/vehicles";
+import { PhotoPicker } from "@/components/admin/PhotoPicker";
 
 type Photo = { id: string; url: string; alt: string | null; position: number };
 
@@ -20,18 +21,20 @@ export function PhotoManager({
 }) {
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [staged, setStaged] = useState<File[]>([]);
 
   function onUpload(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
+    if (staged.length === 0) return;
     setMsg(null);
+    const fd = new FormData();
+    staged.forEach((f) => fd.append("files", f));
     start(async () => {
-      const res = await uploadVehiclePhotos(vehicleId, form);
+      const res = await uploadVehiclePhotos(vehicleId, fd);
       if (!res.ok) setMsg(res.error ?? "Falha no upload.");
       else {
         setMsg(`${res.added} foto(s) enviada(s).`);
-        if (fileRef.current) fileRef.current.value = "";
+        setStaged([]);
       }
     });
   }
@@ -99,26 +102,18 @@ export function PhotoManager({
         </ul>
       )}
 
-      <form onSubmit={onUpload} className="flex flex-col gap-2 rounded border border-border bg-surface p-4">
-        <label className="text-[0.82rem] text-fg-dim">
+      <form onSubmit={onUpload} className="flex flex-col gap-3 rounded border border-border bg-surface p-4">
+        <span className="text-[0.82rem] text-fg-dim">
           Adicionar fotos (JPG, PNG, WebP ou AVIF)
-          <input
-            ref={fileRef}
-            type="file"
-            name="files"
-            accept="image/jpeg,image/png,image/webp,image/avif"
-            multiple
-            required
-            className="mt-1.5 block w-full text-[0.85rem] text-fg-dim file:mr-3 file:rounded file:border-0 file:bg-bg-elev file:px-3 file:py-1.5 file:text-fg"
-          />
-        </label>
+        </span>
+        <PhotoPicker files={staged} onChange={setStaged} disabled={pending} />
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || staged.length === 0}
           className="inline-flex h-10 w-fit items-center gap-2 rounded border border-border-strong px-4 text-[0.88rem] font-medium text-fg hover:border-fg disabled:opacity-60"
         >
           <UploadSimple size={16} />
-          {pending ? "Enviando…" : "Enviar"}
+          {pending ? "Enviando…" : `Enviar${staged.length ? ` (${staged.length})` : ""}`}
         </button>
         {msg ? <p className="text-[0.82rem] text-fg-dim">{msg}</p> : null}
       </form>
