@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef } from "react";
+import { getImageProps } from "next/image";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useIsomorphicLayoutEffect } from "@/lib/useIsomorphicLayoutEffect";
 import { Container } from "@/components/ui/Container";
-import { Placeholder } from "@/components/ui/Placeholder";
 import { ButtonLink } from "@/components/ui/Button";
 import { WhatsappCta } from "@/components/ui/WhatsappCta";
 import { SplitLines } from "@/components/motion/SplitLines";
@@ -13,7 +13,29 @@ import { Reveal } from "@/components/motion/Reveal";
 import { Magnetic } from "@/components/motion/Magnetic";
 import { site } from "@/lib/site";
 
+const HERO_PHOTO_ALT =
+  "Chevrolet Tracker branco estacionado na fachada da Benevento's Veículos";
+
+// Art direction: foto vertical dedicada no mobile (evita cortar/esticar a
+// foto pensada para paisagem) e a foto horizontal em telas maiores.
+function getHeroPictureProps() {
+  const common = {
+    alt: HERO_PHOTO_ALT,
+    fill: true as const,
+    sizes: "100vw",
+    priority: true,
+  };
+  const {
+    props: { srcSet: mobileSrcSet },
+  } = getImageProps({ ...common, src: "/images/tracker-hero-mobile-new.png" });
+  const {
+    props: { srcSet: desktopSrcSet, ...desktopRest },
+  } = getImageProps({ ...common, src: "/images/tracker-hero-new.png" });
+  return { mobileSrcSet, desktopSrcSet, desktopRest };
+}
+
 export function Hero() {
+  const { mobileSrcSet, desktopSrcSet, desktopRest } = getHeroPictureProps();
   const section = useRef<HTMLElement>(null);
   const photo = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -51,21 +73,46 @@ export function Hero() {
       className="relative flex min-h-[100svh] items-center overflow-hidden pb-16 pt-24"
     >
       <div className="absolute inset-0 -z-10">
-        <div ref={photo} className="absolute -inset-[8%] will-change-transform">
-          {/* TODO: foto real principal (carro em destaque, 1920x1080+) */}
-          <Placeholder
-            label="Carro em destaque no pátio"
-            tone="hero"
-            ratio="16 / 10"
-            className="size-full rounded-none border-0"
-          />
+        <div ref={photo} className="absolute inset-0 will-change-transform">
+          <picture>
+            <source
+              media="(max-width: 767px)"
+              srcSet={mobileSrcSet}
+            />
+            <source media="(min-width: 768px)" srcSet={desktopSrcSet} />
+            <img
+              {...desktopRest}
+              alt={HERO_PHOTO_ALT}
+              className="size-full object-cover object-center md:object-[32%_center]"
+            />
+          </picture>
         </div>
+        {/* Contraste do texto no mobile: o carro ocupa a largura toda, então
+            a faixa de conteúdo precisa de um degradê vertical forte. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 md:hidden"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(11,11,12,0.12) 0%, rgba(11,11,12,0.38) 24%, rgba(11,11,12,0.78) 40%, rgba(11,11,12,0.9) 62%, rgba(11,11,12,0.95) 100%)",
+          }}
+        />
+        {/* Contraste do texto no desktop/tablet: escurece a metade esquerda
+            (onde o texto fica) e deixa o carro, à direita, mais visível. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 hidden md:block"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(11,11,12,0.9) 0%, rgba(11,11,12,0.78) 30%, rgba(11,11,12,0.35) 50%, rgba(11,11,12,0.04) 68%, transparent 82%)",
+          }}
+        />
         <div
           ref={scrim}
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, rgba(11,11,12,0.30) 0%, rgba(11,11,12,0.20) 40%, rgba(11,11,12,0.92) 100%), linear-gradient(90deg, rgba(11,11,12,0.80) 0%, rgba(11,11,12,0.10) 55%, transparent 80%)",
+              "linear-gradient(180deg, rgba(11,11,12,0.15) 0%, rgba(11,11,12,0.08) 45%, rgba(11,11,12,0.85) 100%)",
           }}
         />
         <div
