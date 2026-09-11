@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { getVehicles } from "@/lib/vehicles";
 
+export const dynamic = "force-dynamic";
+
 const base = "https://beneventoveiculos.com.br";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
