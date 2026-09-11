@@ -102,7 +102,7 @@ export default function SobrePage() {
                 <ButtonLink href="/estoque" size="lg">
                   Ver estoque
                 </ButtonLink>
-                <WhatsappCta size="lg">Falar no WhatsApp</WhatsappCta>
+                <WhatsappCta size="lg" owner={0}>Falar no WhatsApp</WhatsappCta>
               </div>
             </Reveal>
           </div>

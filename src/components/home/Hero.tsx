@@ -152,7 +152,7 @@ export function Hero() {
                   Ver estoque
                 </ButtonLink>
               </Magnetic>
-              <WhatsappCta size="lg" message="Olá! Vi o site e quero ajuda para escolher um carro.">
+              <WhatsappCta size="lg" owner={1} message="Olá! Vi o site e quero ajuda para escolher um carro.">
                 Falar no WhatsApp
               </WhatsappCta>
             </div>

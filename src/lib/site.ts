@@ -50,6 +50,13 @@ export const site = {
   email: "contato@beneventoveiculos.com.br",
 } as const;
 
+// Donos da loja que atendem os clientes pelo WhatsApp. Os botões que levam
+// ao WhatsApp intercalam entre os dois (index 0, 1, 0, 1...).
+export const whatsappOwners = [
+  { name: "Murilo", number: "5516996127633" },
+  { name: "Guilherme", number: "5516997358886" },
+] as const;
+
 export const nav = [
   { label: "Início", href: "/" },
   { label: "Estoque", href: "/estoque" },
