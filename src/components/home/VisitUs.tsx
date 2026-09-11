@@ -8,11 +8,12 @@ import { SplitLines } from "@/components/motion/SplitLines";
 import { Reveal } from "@/components/motion/Reveal";
 import { ButtonLink } from "@/components/ui/Button";
 import { WhatsappCta } from "@/components/ui/WhatsappCta";
-import { Placeholder } from "@/components/ui/Placeholder";
 import { getSiteConfig } from "@/lib/site-config";
 
 export async function VisitUs() {
   const site = await getSiteConfig();
+  const fullAddress = `${site.address.street} - ${site.address.district}, ${site.address.city} - ${site.address.state}, ${site.address.zip}`;
+  const mapEmbedSrc = `https://www.google.com/maps?q=${encodeURIComponent(fullAddress)}&output=embed`;
   return (
     <section id="visita" className="scroll-mt-24 py-16 md:py-24">
       <Container width="wide">
@@ -73,12 +74,21 @@ export async function VisitUs() {
               href={site.address.mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative block"
+              aria-label={`Abrir ${fullAddress} no Google Maps`}
+              className="group relative block overflow-hidden rounded border border-border"
+              style={{ aspectRatio: "4 / 3" }}
             >
-              {/* TODO: incorporar mapa real (Google Maps embed) da loja */}
-              <Placeholder
-                label="Mapa da loja"
-                ratio="4 / 3"
+              <iframe
+                src={mapEmbedSrc}
+                title="Mapa da loja"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="pointer-events-none h-full w-full grayscale-[35%] contrast-[1.05] transition-transform duration-500 ease-[cubic-bezier(0.65,0,0.35,1)] group-hover:scale-[1.03]"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{ boxShadow: "inset 0 0 140px rgba(0,0,0,0.5)" }}
               />
               <span className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded bg-bg/80 px-3 py-1.5 text-[0.82rem] text-fg backdrop-blur-sm transition-colors group-hover:text-accent">
                 Como chegar

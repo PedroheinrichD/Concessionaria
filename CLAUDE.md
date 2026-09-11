@@ -351,11 +351,15 @@ Migrations futuras: `prisma migrate dev --name <x>` (usa `DIRECT_URL`).
    `src/lib/site.ts`; o cliente/admin ajusta em `/admin/config`. Header/Hero e
    CTAs de client ainda leem `site.ts` — sincronizar os dois ou migrar via
    context depois.
-3. **Fachada / mapa**: ainda usam `Placeholder` (não são fotos de veículo).
-   Trocar por `<Image>` / embed quando o cliente enviar. O Hero já usa fotos
-   reais (`public/images/tracker-hero.png` para telas ≥768px,
+3. **Fachada**: ainda usa `Placeholder` (não é foto de veículo). Trocar por
+   `<Image>` quando o cliente enviar. O Hero já usa fotos reais
+   (`public/images/tracker-hero.png` para telas ≥768px,
    `tracker-hero-mobile.png` abaixo disso via `<picture>` + `getImageProps`
-   para não distorcer/cortar mal no mobile).
+   para não distorcer/cortar mal no mobile). O mapa em `VisitUs` já usa um
+   embed real do Google Maps (`https://www.google.com/maps?q=<endereço>&output=embed`,
+   sem API key) a partir do endereço em `site.address` /
+   `configuracoes.addressStreet` etc; clicar leva ao `mapsUrl` (Google Maps em
+   nova aba).
 4. **Domínio**: `metadataBase` e `sitemap.ts` usam
    `https://beneventoveiculos.com.br` fixo.
 5. **RLS do bucket `veiculos`**: leitura pública OK; escrita só via secret key

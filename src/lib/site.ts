@@ -29,14 +29,14 @@ export const site = {
       "Olá! Vim pelo site e quero falar sobre um veículo do estoque.",
   },
 
-  // PLACEHOLDER: endereco real da loja.
   address: {
-    street: "Av. Exemplo, 1234",
+    street: "Av. Florêncio Terra, 1630",
     district: "Centro",
-    city: "Cidade",
-    state: "UF",
-    zip: "00000-000",
-    mapsUrl: "https://maps.google.com",
+    city: "Itápolis",
+    state: "SP",
+    zip: "14900-000",
+    mapsUrl:
+      "https://www.google.com/maps/search/?api=1&query=Av.+Flor%C3%AAncio+Terra%2C+1630+-+Centro%2C+It%C3%A1polis+-+SP%2C+14900-000",
   },
 
   // PLACEHOLDER: horario real de funcionamento.

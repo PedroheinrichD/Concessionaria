@@ -337,12 +337,13 @@ const siteConfig = {
   whatsappNumber: "5500000000000",
   whatsappMessage: "Olá! Vim pelo site e quero falar sobre um veículo do estoque.",
   email: "contato@beneventoveiculos.com.br",
-  addressStreet: "Av. Exemplo, 1234",
+  addressStreet: "Av. Florêncio Terra, 1630",
   addressDistrict: "Centro",
-  addressCity: "Cidade",
-  addressState: "UF",
-  addressZip: "00000-000",
-  mapsUrl: "https://maps.google.com",
+  addressCity: "Itápolis",
+  addressState: "SP",
+  addressZip: "14900-000",
+  mapsUrl:
+    "https://www.google.com/maps/search/?api=1&query=Av.+Flor%C3%AAncio+Terra%2C+1630+-+Centro%2C+It%C3%A1polis+-+SP%2C+14900-000",
   hours: [
     { days: "Segunda a sexta", time: "08h30 às 18h30" },
     { days: "Sábado", time: "08h30 às 13h00" },
