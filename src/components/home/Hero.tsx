@@ -81,7 +81,7 @@ export function Hero() {
       <Container className="relative">
         <div ref={content} className="flex max-w-2xl flex-col gap-6">
           <span className="text-[0.82rem] text-accent">
-            Concessionária de seminovos
+            Garagem de seminovos
           </span>
 
           <SplitLines
