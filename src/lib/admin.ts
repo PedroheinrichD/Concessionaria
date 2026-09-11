@@ -59,3 +59,23 @@ export async function getVehicleForAdmin(id: string) {
     include: { photos: { orderBy: { position: "asc" } } },
   });
 }
+
+/** Lista enxuta (capa + nome) para o seletor de destaques (/admin/destaques). */
+export async function getVehiclesForFeaturedPicker() {
+  return prisma.vehicle.findMany({
+    orderBy: [{ brand: "asc" }, { model: "asc" }],
+    select: {
+      id: true,
+      brand: true,
+      model: true,
+      version: true,
+      status: true,
+      featuredPosition: true,
+      photos: {
+        orderBy: { position: "asc" },
+        take: 1,
+        select: { url: true, alt: true },
+      },
+    },
+  });
+}

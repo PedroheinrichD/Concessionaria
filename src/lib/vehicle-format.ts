@@ -81,7 +81,9 @@ export function filterVehicles(list: Vehicle[], f: VehicleFilters): Vehicle[] {
       break;
     default:
       out.sort(
-        (a, b) => Number(b.featured) - Number(a.featured) || b.year - a.year,
+        (a, b) =>
+          (a.featuredPosition ?? Infinity) - (b.featuredPosition ?? Infinity) ||
+          b.year - a.year,
       );
   }
 

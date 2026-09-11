@@ -86,7 +86,6 @@ export const vehicleSchema = z.object({
   doors: z.coerce.number().int().min(2).max(6),
   plateEnd: z.coerce.number().int().min(0).max(9),
   status: z.enum(["AVAILABLE", "RESERVED", "SOLD"]),
-  featured: z.coerce.boolean().default(false),
   highlights: lines,
   features: lines,
   description: nonEmpty("Descrição", 4000),

@@ -47,26 +47,26 @@ enum VehicleStatus {
 }
 
 model Vehicle {
-  id              String        @id @default(cuid())
-  slug            String        @unique // rota /estoque/[slug]
-  brand           String
-  model           String
-  version         String
-  year            Int // ano modelo
-  manufactureYear Int           @map("manufacture_year") // ano de fabricação
-  price           Int // R$ inteiros (à vista), igual ao mock
-  mileage         Int // km
-  fuel            FuelType
-  transmission    Transmission
-  body            BodyType
-  color           String
-  doors           Int
-  plateEnd        Int           @map("plate_end") // final da placa (rodízio)
-  featured        Boolean       @default(false)
-  status          VehicleStatus @default(AVAILABLE)
-  highlights      String[] // 2-3 frases curtas de venda
-  features        String[] // itens de série e opcionais
-  description     String
+  id               String        @id @default(cuid())
+  slug             String        @unique // rota /estoque/[slug]
+  brand            String
+  model            String
+  version          String
+  year             Int // ano modelo
+  manufactureYear  Int           @map("manufacture_year") // ano de fabricação
+  price            Int // R$ inteiros (à vista), igual ao mock
+  mileage          Int // km
+  fuel             FuelType
+  transmission     Transmission
+  body             BodyType
+  color            String
+  doors            Int
+  plateEnd         Int           @map("plate_end") // final da placa (rodízio)
+  featuredPosition Int?          @unique @map("featured_position") // 1, 2 ou 3; null = não é destaque
+  status           VehicleStatus @default(AVAILABLE)
+  highlights       String[] // 2-3 frases curtas de venda
+  features         String[] // itens de série e opcionais
+  description      String
 
   photos    VehiclePhoto[]
   leads     Lead[]
@@ -83,7 +83,7 @@ model Vehicle {
   purchaseCost  Int?    @map("purchase_cost")
   internalNotes String? @map("internal_notes")
 
-  @@index([status, featured])
+  @@index([status])
   @@index([brand])
   @@index([body])
   @@index([price])

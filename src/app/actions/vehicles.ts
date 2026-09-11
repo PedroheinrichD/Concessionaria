@@ -41,10 +41,7 @@ export async function saveVehicle(
   await requireUser();
 
   const id = String(formData.get("id") ?? "").trim();
-  const raw = {
-    ...Object.fromEntries(formData),
-    featured: formData.get("featured") === "on",
-  };
+  const raw = Object.fromEntries(formData);
   const parsed = vehicleSchema.safeParse(raw);
   if (!parsed.success) {
     return {
@@ -188,4 +185,37 @@ export async function moveVehiclePhoto(
     select: { slug: true },
   });
   revalidateVehicle(v?.slug);
+}
+
+function revalidateFeatured() {
+  revalidatePath("/");
+  revalidatePath("/estoque");
+  revalidatePath("/admin/destaques");
+}
+
+export async function setFeaturedPosition(
+  position: 1 | 2 | 3,
+  vehicleId: string,
+): Promise<void> {
+  await requireUser();
+  await prisma.$transaction([
+    prisma.vehicle.updateMany({
+      where: { featuredPosition: position },
+      data: { featuredPosition: null },
+    }),
+    prisma.vehicle.update({
+      where: { id: vehicleId },
+      data: { featuredPosition: position },
+    }),
+  ]);
+  revalidateFeatured();
+}
+
+export async function clearFeaturedPosition(position: 1 | 2 | 3): Promise<void> {
+  await requireUser();
+  await prisma.vehicle.updateMany({
+    where: { featuredPosition: position },
+    data: { featuredPosition: null },
+  });
+  revalidateFeatured();
 }

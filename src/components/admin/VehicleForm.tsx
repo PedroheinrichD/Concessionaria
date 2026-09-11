@@ -33,7 +33,6 @@ type VehicleLike = {
   doors: number;
   plateEnd: number;
   status: string;
-  featured: boolean;
   highlights: string[];
   features: string[];
   description: string;
@@ -230,10 +229,6 @@ export function VehicleForm({ vehicle }: { vehicle?: VehicleLike }) {
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
-        </label>
-        <label className="mt-5 flex items-center gap-2 text-[0.88rem] text-fg-dim">
-          <input type="checkbox" name="featured" defaultChecked={vehicle?.featured} className="size-4" />
-          Destaque na home
         </label>
       </fieldset>
 

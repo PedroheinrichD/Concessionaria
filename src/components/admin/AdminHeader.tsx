@@ -9,6 +9,7 @@ import { Container } from "@/components/ui/Container";
 const nav = [
   { href: "/admin", label: "Visão geral" },
   { href: "/admin/veiculos", label: "Veículos" },
+  { href: "/admin/destaques", label: "Destaques" },
   { href: "/admin/leads", label: "Leads" },
   { href: "/admin/config", label: "Dados da loja" },
 ];

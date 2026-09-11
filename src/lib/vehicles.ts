@@ -68,7 +68,7 @@ type Row = {
   color: string;
   doors: number;
   plateEnd: number;
-  featured: boolean;
+  featuredPosition: number | null;
   status: string;
   highlights: string[];
   features: string[];
@@ -95,7 +95,7 @@ function toVehicle(row: Row): Vehicle {
     color: row.color,
     doors: row.doors,
     plateEnd: row.plateEnd,
-    featured: row.featured,
+    featuredPosition: row.featuredPosition,
     status: STATUS_LABEL[row.status] ?? "disponivel",
     highlights: row.highlights,
     features: row.features,
@@ -109,7 +109,7 @@ function toVehicle(row: Row): Vehicle {
 const VISIBLE = { status: { not: "SOLD" as const } };
 
 const listOrder = [
-  { featured: "desc" as const },
+  { featuredPosition: { sort: "asc" as const, nulls: "last" as const } },
   { year: "desc" as const },
   { createdAt: "desc" as const },
 ];
@@ -128,8 +128,8 @@ export async function getVehicles(): Promise<Vehicle[]> {
 
 export async function getFeaturedVehicles(limit = 3): Promise<Vehicle[]> {
   const rows = await prisma.vehicle.findMany({
-    where: { featured: true, status: "AVAILABLE" },
-    orderBy: [{ year: "desc" }, { createdAt: "desc" }],
+    where: { featuredPosition: { not: null }, status: "AVAILABLE" },
+    orderBy: { featuredPosition: "asc" },
     take: limit,
     include: {
       _count: { select: { photos: true } },

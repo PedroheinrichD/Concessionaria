@@ -79,12 +79,13 @@ src/
       estoque/[id]/page.tsx      página do veículo por slug + generateMetadata
       sobre/page.tsx  contato/page.tsx
     admin/              painel (fora do (site), shell próprio, tudo requireUser)
-      layout.tsx  login/  page.tsx (stats)  leads/  config/
+      layout.tsx  login/  page.tsx (stats)  destaques/  leads/  config/
       veiculos/  veiculos/novo/  veiculos/[id]/  (CRUD + fotos)
     actions/
       leads.ts     "use server" - submitContact/Trade/InterestLead
       auth.ts      "use server" - signIn / signOut (Supabase Auth)
-      vehicles.ts  "use server" - saveVehicle, deleteVehicle, upload/move/removePhoto
+      vehicles.ts  "use server" - saveVehicle, deleteVehicle, upload/move/removePhoto,
+                   setFeaturedPosition, clearFeaturedPosition
       config.ts    "use server" - updateSiteConfig
 
   components/
@@ -96,7 +97,8 @@ src/
     vehicle/   VehicleCard, VehicleImage, EstoqueBrowser (client), Gallery (client),
                VehicleInterestForm (client)
     contato/   ContactForm (client)
-    admin/     VehicleForm, PhotoManager, DeleteVehicleButton, SiteConfigForm (client)
+    admin/     VehicleForm, PhotoManager, DeleteVehicleButton, DestaquesManager,
+               AdminHeader, SiteConfigForm (client)
 
   types/vehicle.ts     interface Vehicle (+ VehiclePhoto, VehicleStatus)
   lib/
@@ -289,6 +291,15 @@ pública de `leads`** — só `src/lib/admin.ts`, dentro de `/admin`.
   `/admin/veiculos` (lista) · `/admin/veiculos/novo` · `/admin/veiculos/[id]`
   (editar + `PhotoManager` + excluir). `saveVehicle` valida com
   `src/lib/vehicle-schema.ts`. Excluir veículo apaga também os objetos no Storage.
+- **Destaques da home** (`/admin/destaques`, `DestaquesManager` client):
+  3 posições fixas (1 = card grande, 2 e 3 = cards menores). Clicar numa posição
+  vazia abre a lista de veículos disponíveis (capa + nome); escolher um chama
+  `setFeaturedPosition(posição, vehicleId)`, que zera quem estava naquela posição
+  e move o veículo escolhido pra lá (transação, respeitando o `@unique` de
+  `featuredPosition`). `clearFeaturedPosition` esvazia uma posição. A home
+  (`getFeaturedVehicles`) só mostra quem está com `status: AVAILABLE`; se o
+  veículo escolhido sair de disponível, o slot mostra um aviso mas não limpa
+  sozinho — o admin troca manualmente.
 - **Fotos = upload do admin.** `src/lib/supabase/storage.ts` (service_role,
   server-only) sobe para o bucket público `veiculos`, grava url/alt/position em
   `veiculo_fotos`. `PhotoManager` faz upload múltiplo, reordenar (setas) e
@@ -310,7 +321,8 @@ pública de `leads`** — só `src/lib/admin.ts`, dentro de `/admin`.
 com `src/types/vehicle.ts`):
 1. `veiculos` — `Vehicle`: slug, brand, model, version, year, manufactureYear,
    price (R$ inteiros), mileage, fuel/transmission/body (enums), color, doors,
-   plateEnd, featured, status, highlights[] , features[], description, timestamps.
+   plateEnd, featuredPosition (1/2/3 ou null, `@unique`, gerido em
+   `/admin/destaques`), status, highlights[] , features[], description, timestamps.
    Campos internos (placa, renavam, chassi, fipe, custo, notas) nunca vão ao site.
 2. `veiculo_fotos` — `VehiclePhoto`: vehicleId, url, alt, position (capa = menor).
 3. `leads` — `Lead`: kind (CONTATO/TROCA/INTERESSE/FINANCIAMENTO), name, phone,
@@ -320,9 +332,11 @@ com `src/types/vehicle.ts`):
    `getSiteConfig()` com fallback para `src/lib/site.ts`; editável em
    `/admin/config`.
 
-**Status:** migration `prisma/migrations/20260910174458_init` aplicada no
-Supabase (PostgreSQL 17.6). `db:verify`: 5 tabelas + 6 enums + 2 FKs + 15
-índices. Seed: 14 veículos, 89 fotos (picsum, dev), 4 depoimentos, 1 config.
+**Status:** migrations `20260910174458_init` e
+`20260911200226_replace_featured_with_position` aplicadas no Supabase
+(PostgreSQL 17.6). `db:verify`: 5 tabelas + 6 enums + 2 FKs + 16 índices
+(inclui o `@unique` de `featuredPosition`). Seed: 14 veículos, 89 fotos
+(picsum, dev), 4 depoimentos, 1 config.
 `db:test` / `tsc` / `eslint` / `next build` passam. `npm audit`: 0
 vulnerabilidades (via `overrides` de `mysql2` e `deepmerge-ts` — transitivas do
 Prisma, `mysql2` nem é usada).
@@ -349,6 +363,9 @@ Migrations futuras: `prisma migrate dev --name <x>` (usa `DIRECT_URL`).
    criar policy para `authenticated`.
 6. **CRUD admin — próximos**: edição de `alt` da foto, status de lead
    (novo→fechado), `generateStaticParams`/ISR se quiser SSG parcial.
+7. **Destaques da home**: a migration que trocou o checkbox `featured` pelo
+   `featuredPosition` zerou os 3 destaques anteriores. O admin precisa
+   escolher os 3 de novo em `/admin/destaques`.
 
 ## Regras de manutenção
 

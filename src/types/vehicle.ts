@@ -37,7 +37,8 @@ export interface Vehicle {
   doors: number;
   /** final da placa (rodízio) */
   plateEnd: number;
-  featured: boolean;
+  /** 1, 2 ou 3 = posição nos destaques da home; null = não é destaque */
+  featuredPosition: number | null;
   status: VehicleStatus;
   /** 2 a 3 pontos de venda curtos */
   highlights: string[];

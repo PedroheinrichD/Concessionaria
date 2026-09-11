@@ -21,7 +21,7 @@ const vehicles = [
     brand: "Chery", model: "Tiggo 5X", version: "1.5 TXS Turbo CVT",
     year: 2022, manufactureYear: 2022, price: 92900, mileage: 38420,
     fuel: "GASOLINA", transmission: "CVT", body: "SUV",
-    color: "Branco Pérola", doors: 4, plateEnd: 7, featured: true, status: "AVAILABLE",
+    color: "Branco Pérola", doors: 4, plateEnd: 7, featuredPosition: 1, status: "AVAILABLE",
     highlights: [
       "Único dono, com manual e chave reserva",
       "Revisões em concessionária",
@@ -42,7 +42,7 @@ const vehicles = [
     brand: "Jeep", model: "Compass", version: "2.0 Turbodiesel Longitude 4x4 AT9",
     year: 2022, manufactureYear: 2021, price: 164900, mileage: 44980,
     fuel: "DIESEL", transmission: "AUTOMATICO", body: "SUV",
-    color: "Prata Billet", doors: 4, plateEnd: 3, featured: true, status: "AVAILABLE",
+    color: "Prata Billet", doors: 4, plateEnd: 3, featuredPosition: 2, status: "AVAILABLE",
     highlights: [
       "Tração 4x4 e câmbio de 9 marchas",
       "Pacote Premium com bancos ventilados",
@@ -63,7 +63,7 @@ const vehicles = [
     brand: "Toyota", model: "Corolla", version: "2.0 XEi CVT",
     year: 2020, manufactureYear: 2019, price: 112900, mileage: 59710,
     fuel: "FLEX", transmission: "CVT", body: "SEDA",
-    color: "Branco Lunar", doors: 4, plateEnd: 1, featured: true, status: "AVAILABLE",
+    color: "Branco Lunar", doors: 4, plateEnd: 1, featuredPosition: 3, status: "AVAILABLE",
     highlights: [
       "Segundo dono, procedência confirmada",
       "Toyota SafetySense de série",
@@ -83,7 +83,7 @@ const vehicles = [
     brand: "Volkswagen", model: "T-Cross", version: "1.0 200 TSI Comfortline AT",
     year: 2021, manufactureYear: 2021, price: 109900, mileage: 43670,
     fuel: "FLEX", transmission: "AUTOMATICO", body: "SUV",
-    color: "Cinza Platinum", doors: 4, plateEnd: 5, featured: true, status: "AVAILABLE",
+    color: "Cinza Platinum", doors: 4, plateEnd: 5, status: "AVAILABLE",
     highlights: [
       "Garantia de fábrica até 2026",
       "Banco traseiro deslizante",
@@ -103,7 +103,7 @@ const vehicles = [
     brand: "Ford", model: "Ranger", version: "2.2 XLS 4x4 Diesel AT",
     year: 2021, manufactureYear: 2020, price: 189900, mileage: 71240,
     fuel: "DIESEL", transmission: "AUTOMATICO", body: "PICAPE",
-    color: "Branco Ártico", doors: 4, plateEnd: 9, featured: false, status: "AVAILABLE",
+    color: "Branco Ártico", doors: 4, plateEnd: 9, status: "AVAILABLE",
     highlights: [
       "Cabine dupla, nunca usada em trabalho pesado",
       "Protetor de caçamba e capota marítima",
@@ -123,7 +123,7 @@ const vehicles = [
     brand: "Hyundai", model: "Tucson", version: "1.6 GLS Turbo AT",
     year: 2018, manufactureYear: 2018, price: 98900, mileage: 82530,
     fuel: "GASOLINA", transmission: "AUTOMATICO", body: "SUV",
-    color: "Prata Sleek", doors: 4, plateEnd: 4, featured: false, status: "AVAILABLE",
+    color: "Prata Sleek", doors: 4, plateEnd: 4, status: "AVAILABLE",
     highlights: [
       "Motor 1.6 turbo com câmbio de dupla embreagem",
       "Teto solar panorâmico",
@@ -143,7 +143,7 @@ const vehicles = [
     brand: "Honda", model: "Civic", version: "2.0 EXL CVT",
     year: 2019, manufactureYear: 2018, price: 118900, mileage: 66410,
     fuel: "FLEX", transmission: "CVT", body: "SEDA",
-    color: "Cinza Barium", doors: 4, plateEnd: 2, featured: false, status: "AVAILABLE",
+    color: "Cinza Barium", doors: 4, plateEnd: 2, status: "AVAILABLE",
     highlights: [
       "Décima geração, acabamento EXL",
       "Bancos em couro com ajuste elétrico",
@@ -164,7 +164,7 @@ const vehicles = [
     brand: "Renault", model: "Duster", version: "1.3 Turbo Iconic CVT",
     year: 2022, manufactureYear: 2022, price: 98900, mileage: 39420,
     fuel: "FLEX", transmission: "CVT", body: "SUV",
-    color: "Marrom Cobrizo", doors: 4, plateEnd: 6, featured: false, status: "AVAILABLE",
+    color: "Marrom Cobrizo", doors: 4, plateEnd: 6, status: "AVAILABLE",
     highlights: [
       "Motor 1.3 turbo de 170 cv",
       "Central multimídia com CarPlay sem fio",
@@ -184,7 +184,7 @@ const vehicles = [
     brand: "Chevrolet", model: "Spin", version: "1.8 LTZ 7 lugares AT",
     year: 2021, manufactureYear: 2020, price: 89900, mileage: 51680,
     fuel: "FLEX", transmission: "AUTOMATICO", body: "MINIVAN",
-    color: "Preto Ébano", doors: 4, plateEnd: 8, featured: false, status: "AVAILABLE",
+    color: "Preto Ébano", doors: 4, plateEnd: 8, status: "AVAILABLE",
     highlights: [
       "Sete lugares com terceira fileira",
       "Ideal para família ou aplicativo",
@@ -204,7 +204,7 @@ const vehicles = [
     brand: "Citroën", model: "C3", version: "1.6 Feel Pack AT",
     year: 2020, manufactureYear: 2019, price: 62900, mileage: 47320,
     fuel: "FLEX", transmission: "AUTOMATICO", body: "HATCH",
-    color: "Preto Perla Nera", doors: 4, plateEnd: 0, featured: false, status: "AVAILABLE",
+    color: "Preto Perla Nera", doors: 4, plateEnd: 0, status: "AVAILABLE",
     highlights: [
       "Câmbio automático de verdade, não automatizado",
       "Baixa quilometragem para o ano",
@@ -224,7 +224,7 @@ const vehicles = [
     brand: "Hyundai", model: "HB20", version: "1.0 Vision",
     year: 2023, manufactureYear: 2022, price: 74900, mileage: 22140,
     fuel: "FLEX", transmission: "MANUAL", body: "HATCH",
-    color: "Branco Polar", doors: 4, plateEnd: 1, featured: false, status: "AVAILABLE",
+    color: "Branco Polar", doors: 4, plateEnd: 1, status: "AVAILABLE",
     highlights: [
       "Seminovo com pouca rodagem",
       "Garantia de fábrica vigente",
@@ -244,7 +244,7 @@ const vehicles = [
     brand: "Fiat", model: "Argo", version: "1.0 Drive",
     year: 2022, manufactureYear: 2021, price: 67900, mileage: 29910,
     fuel: "FLEX", transmission: "MANUAL", body: "HATCH",
-    color: "Vermelho Montecarlo", doors: 4, plateEnd: 5, featured: false, status: "AVAILABLE",
+    color: "Vermelho Montecarlo", doors: 4, plateEnd: 5, status: "AVAILABLE",
     highlights: [
       "Pintura vermelha original em ótimo estado",
       "Pouco rodado",
@@ -265,7 +265,7 @@ const vehicles = [
     brand: "Volkswagen", model: "Voyage", version: "1.6 MSI Comfortline",
     year: 2019, manufactureYear: 2018, price: 58900, mileage: 63120,
     fuel: "FLEX", transmission: "MANUAL", body: "SEDA",
-    color: "Preto Ninja", doors: 4, plateEnd: 2, featured: false, status: "AVAILABLE",
+    color: "Preto Ninja", doors: 4, plateEnd: 2, status: "AVAILABLE",
     highlights: [
       "Porta-malas de 500 litros",
       "Motor 1.6 conhecido pela durabilidade",
@@ -285,7 +285,7 @@ const vehicles = [
     brand: "Toyota", model: "Etios", version: "1.5 XLS Sedã",
     year: 2019, manufactureYear: 2018, price: 61900, mileage: 55830,
     fuel: "FLEX", transmission: "MANUAL", body: "SEDA",
-    color: "Prata", doors: 4, plateEnd: 6, featured: false, status: "AVAILABLE",
+    color: "Prata", doors: 4, plateEnd: 6, status: "AVAILABLE",
     highlights: [
       "Fama de não dar problema",
       "Consumo baixo na estrada",
