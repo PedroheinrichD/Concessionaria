@@ -134,7 +134,7 @@ export function Hero() {
           <SplitLines
             as="h1"
             immediate
-            lines={["Seu próximo carro", "já está no pátio."]}
+            lines={["Seu próximo carro", "já está aqui."]}
             className="text-[clamp(2rem,8.5vw,5rem)] font-semibold leading-[1.02] text-fg"
           />
 
